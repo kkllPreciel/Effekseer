@@ -1,4 +1,4 @@
-
+﻿
 #ifndef	__EFFEKSEERRENDERER_GL_RENDERSTATE_H__
 #define	__EFFEKSEERRENDERER_GL_RENDERSTATE_H__
 
@@ -23,9 +23,9 @@ class RenderState
 private:
 	RendererImplemented*	m_renderer;
 
-#if  defined(__EFFEKSEER_RENDERER_GL3__) || defined(__EFFEKSEER_RENDERER_GLES3__)
+
 	GLuint					m_samplers[4];
-#endif
+
 
 public:
 	RenderState( RendererImplemented* renderer );

@@ -1,4 +1,4 @@
-
+Ôªø
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
@@ -39,19 +39,19 @@ void* SoundLoader::Load( const EFK_CHAR* path )
 {
 	assert( path != NULL );
 	
-	std::unique_ptr<Effekseer::FileReader> 
+	std::unique_ptr<::Effekseer::FileReader> 
 		reader( m_fileInterface->OpenRead( path ) );
 	if( reader.get() == NULL ) return NULL;
 
 	uint32_t chunkIdent, chunkSize;
-	// RIFFÉ`ÉÉÉìÉNÇÉ`ÉFÉbÉN
+	// RIFF„ÉÅ„É£„É≥„ÇØ„Çí„ÉÅ„Çß„ÉÉ„ÇØ
 	reader->Read(&chunkIdent, 4);
 	reader->Read(&chunkSize, 4);
 	if (memcmp(&chunkIdent, "RIFF", 4) != 0) {
 		return NULL;
 	}
 
-	// WAVEÉVÉìÉ{ÉãÇÉ`ÉFÉbÉN
+	// WAVE„Ç∑„É≥„Éú„É´„Çí„ÉÅ„Çß„ÉÉ„ÇØ
 	reader->Read(&chunkIdent, 4);
 	if (memcmp(&chunkIdent, "WAVE", 4) != 0) {
 		return NULL;
@@ -65,29 +65,30 @@ void* SoundLoader::Load( const EFK_CHAR* path )
 		uint16_t	nBlockAlign;
 		uint16_t	wBitsPerSample;
 		uint16_t	cbSize;
-	} wavefmt = {0}; 
+	} wavefmt = {0};
+
 	for (;;) {
 		reader->Read(&chunkIdent, 4);
 		reader->Read(&chunkSize, 4);
 
 		if (memcmp(&chunkIdent, "fmt ", 4) == 0) {
-			// ÉtÉHÅ[É}ÉbÉgÉ`ÉÉÉìÉN
-			uint32_t size = (chunkSize < sizeof(wavefmt)) ? chunkSize : sizeof(wavefmt);
+			// „Éï„Ç©„Éº„Éû„ÉÉ„Éà„ÉÅ„É£„É≥„ÇØ
+			uint32_t size = (chunkSize < (uint32_t)sizeof(wavefmt)) ? chunkSize : (uint32_t)sizeof(wavefmt);
 			reader->Read(&wavefmt, size);
 			if (size < chunkSize) {
 				reader->Seek(reader->GetPosition() + chunkSize - size);
 			}
 		} else if (memcmp(&chunkIdent, "data", 4) == 0) {
-			// ÉfÅ[É^É`ÉÉÉìÉN
+			// „Éá„Éº„Çø„ÉÅ„É£„É≥„ÇØ
 			break;
 		} else {
-			// ïsñæÇ»É`ÉÉÉìÉNÇÕÉXÉLÉbÉv
+			// ‰∏çÊòé„Å™„ÉÅ„É£„É≥„ÇØ„ÅØ„Çπ„Ç≠„ÉÉ„Éó
 			reader->Seek(reader->GetPosition() + chunkSize);
 		}
 	}
 	
-	// ÉtÉHÅ[É}ÉbÉgÉ`ÉFÉbÉN
-	if (wavefmt.wFormatTag != 1 || wavefmt.nChannels > 2 || wavefmt.wBitsPerSample > 16) {
+	// „Éï„Ç©„Éº„Éû„ÉÉ„Éà„ÉÅ„Çß„ÉÉ„ÇØ
+	if (wavefmt.wFormatTag != 1 || wavefmt.nChannels > 2) {
 		return NULL;
 	}
 
@@ -95,23 +96,42 @@ void* SoundLoader::Load( const EFK_CHAR* path )
 	uint32_t size;
 	switch (wavefmt.wBitsPerSample) {
 	case 8:
-		// 16bitPCMÇ…ïœä∑
+		// 8bit -> 16bit PCMÂ§âÊèõ
 		size = chunkSize * 2;
 		buffer = new uint8_t[size];
 		reader->Read(&buffer[size / 2], chunkSize);
 		{
 			int16_t* dst = (int16_t*)&buffer[0];
 			uint8_t* src = (uint8_t*)&buffer[size / 2];
-			for (uint32_t i = 0; i < chunkSize; i++) {
+			for (uint32_t i = 0; i < size; i += 2) {
 				*dst++ = (int16_t)(((int32_t)*src++ - 128) << 8);
 			}
 		}
 		break;
 	case 16:
-		// ÇªÇÃÇ‹Ç‹ì«Ç›çûÇ›
+		// „Åù„ÅÆ„Åæ„ÅæË™≠„ÅøËæº„Åø
 		buffer = new uint8_t[chunkSize];
 		size = reader->Read(buffer, chunkSize);
 		break;
+	case 24:
+		// 24bit -> 16bit PCMÂ§âÊèõ
+		size = chunkSize * 2 / 3;
+		buffer = new uint8_t[size];
+		{
+			uint8_t* chunkData = new uint8_t[chunkSize];
+			reader->Read(chunkData, chunkSize);
+
+			int16_t* dst = (int16_t*)&buffer[0];
+			uint8_t* src = (uint8_t*)&chunkData[0];
+			for (uint32_t i = 0; i < size; i += 2) {
+				*dst++ = (int16_t)(src[1] | (src[2] << 8));
+				src += 3;
+			}
+			delete[] chunkData;
+		}
+		break;
+	default:
+		return NULL;
 	}
 
 	ALenum format = (wavefmt.nChannels == 2) ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16;

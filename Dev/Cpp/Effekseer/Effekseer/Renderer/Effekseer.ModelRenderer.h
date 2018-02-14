@@ -1,4 +1,4 @@
-
+﻿
 #ifndef	__EFFEKSEER_MODEL_RENDERER_H__
 #define	__EFFEKSEER_MODEL_RENDERER_H__
 
@@ -32,6 +32,8 @@ public:
 		TextureWrapType	TextureWrap;
 		bool				ZTest;
 		bool				ZWrite;
+		BillboardType		Billboard;
+
 		bool				Lighting;
 		CullingType		Culling;
 		int32_t				ModelIndex;
@@ -42,6 +44,10 @@ public:
 
 		bool				Distortion;
 		float				DistortionIntensity;
+
+		float				DepthOffset;
+		bool				IsDepthOffsetScaledWithCamera;
+		bool				IsDepthOffsetScaledWithParticleScale;
 	};
 
 	struct InstanceParameter
@@ -49,6 +55,7 @@ public:
 		Matrix43		SRTMatrix43;
 		RectF			UV;
 		Color			AllColor;
+		int32_t			Time;
 	};
 
 public:

@@ -1,4 +1,4 @@
-
+ï»¿
 
 //----------------------------------------------------------------------------------
 //
@@ -20,7 +20,7 @@ namespace Effekseer
 //----------------------------------------------------------------------------------
 InstanceGroup::InstanceGroup( Manager* manager, EffectNode* effectNode, InstanceContainer* container, InstanceGlobal* global )
 	: m_manager		( (ManagerImplemented*)manager )
-	, m_effectNode	( effectNode )
+	, m_effectNode((EffectNodeImplemented*) effectNode)
 	, m_container	( container )
 	, m_global		( global )
 	, m_time		( 0 )
@@ -44,34 +44,37 @@ InstanceGroup::~InstanceGroup()
 //----------------------------------------------------------------------------------
 void InstanceGroup::RemoveInvalidInstances()
 {
-	std::list<Instance*>::iterator it = m_removingInstances.begin();
+	auto it = m_removingInstances.begin();
 
 	while( it != m_removingInstances.end() )
 	{
-		if( (*it)->m_State == INSTANCE_STATE_ACTIVE )
+		auto instance = *it;
+
+		if( instance->m_State == INSTANCE_STATE_ACTIVE )
 		{
 			assert(0);
 		}
-		else if( (*it)->m_State == INSTANCE_STATE_REMOVING )
+		else if( instance->m_State == INSTANCE_STATE_REMOVING )
 		{
-			// íœ’†ˆ—
-			(*it)->m_State = INSTANCE_STATE_REMOVED;
+			// å‰Šé™¤ä¸­å‡¦ç†
+			instance->m_State = INSTANCE_STATE_REMOVED;
 			it++;
 		}
-		else if( (*it)->m_State == INSTANCE_STATE_REMOVED )
+		else if( instance->m_State == INSTANCE_STATE_REMOVED )
 		{
-			// íœˆ—
-			if( (*it)->m_pEffectNode->GetType() == EFFECT_NODE_TYPE_ROOT )
+			it = m_removingInstances.erase( it );
+
+			// å‰Šé™¤å‡¦ç†
+			if( instance->m_pEffectNode->GetType() == EFFECT_NODE_TYPE_ROOT )
 			{
-				delete (*it);
+				delete instance;
 			}
 			else
 			{
-				(*it)->~Instance();
-				m_manager->PushInstance( (*it) );
+				instance->~Instance();
+				m_manager->PushInstance( instance );
 			}
 
-			it = m_removingInstances.erase( it );
 			m_global->DecInstanceCount();
 		}
 	}
@@ -134,20 +137,22 @@ void InstanceGroup::Update( float deltaFrame, bool shown )
 {
 	RemoveInvalidInstances();
 
-	std::list<Instance*>::iterator it = m_instances.begin();
+	auto it = m_instances.begin();
 
 	while( it != m_instances.end() )
 	{
-		if( (*it)->m_State == INSTANCE_STATE_ACTIVE )
-		{
-			// XVˆ—
-			(*it)->Update( deltaFrame, shown );
+		auto instance = *it;
 
-			// ”jŠüƒ`ƒFƒbƒN
-			if( (*it)->m_State != INSTANCE_STATE_ACTIVE )
+		if( instance->m_State == INSTANCE_STATE_ACTIVE )
+		{
+			// æ›´æ–°å‡¦ç†
+			instance->Update( deltaFrame, shown );
+
+			// ç ´æ£„ãƒã‚§ãƒƒã‚¯
+			if( instance->m_State != INSTANCE_STATE_ACTIVE )
 			{
-				m_removingInstances.push_back( (*it) );
 				it = m_instances.erase( it );
+				m_removingInstances.push_back( instance );
 			}
 			else
 			{
@@ -164,7 +169,7 @@ void InstanceGroup::Update( float deltaFrame, bool shown )
 //----------------------------------------------------------------------------------
 void InstanceGroup::SetBaseMatrix( const Matrix43& mat )
 {
-	for (auto& instance : m_instances)
+	for (auto instance : m_instances)
 	{
 		if (instance->m_State == INSTANCE_STATE_ACTIVE)
 		{
@@ -189,16 +194,17 @@ void InstanceGroup::RemoveForcibly()
 //----------------------------------------------------------------------------------
 void InstanceGroup::KillAllInstances()
 {
-	for (auto& instance : m_instances)
+	while (!m_instances.empty())
 	{
+		auto instance = m_instances.front();
+		m_instances.pop_front();
+
 		if (instance->GetState() == INSTANCE_STATE_ACTIVE)
 		{
 			instance->Kill();
 			m_removingInstances.push_back(instance);
 		}
 	}
-
-	m_instances.clear();
 }
 
 //----------------------------------------------------------------------------------

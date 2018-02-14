@@ -1,4 +1,4 @@
-
+ï»¿
 #ifndef	__EFFEKSEER_THREAD_H__
 #define	__EFFEKSEER_THREAD_H__
 
@@ -20,7 +20,10 @@ class Thread
 {
 private:
 #ifdef _WIN32
-	static DWORD EFK_STDCALL ThreadProc( void* arguments );
+	/* DWORDã‚’ç½®ãã‹ãˆ */
+	static unsigned long EFK_STDCALL ThreadProc(void* arguments);
+#elif defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE)
+
 #else
 	static void* ThreadProc( void* arguments );
 #endif
@@ -28,6 +31,8 @@ private:
 private:
 #ifdef _WIN32
 	HANDLE m_thread;
+#elif defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE)
+
 #else
 	pthread_t m_thread;
 	bool m_running;
@@ -44,20 +49,20 @@ public:
 
 
 	/**
-		@brief ƒXƒŒƒbƒh‚ğ¶¬‚·‚éB
-		@param threadFunc	[in] ƒXƒŒƒbƒhŠÖ”
-		@param pData		[in] ƒXƒŒƒbƒh‚Éˆø‚«“n‚·ƒf[ƒ^ƒ|ƒCƒ“ƒ^
-		@return	¬”Û
+		@brief ã‚¹ãƒ¬ãƒƒãƒ‰ã‚’ç”Ÿæˆã™ã‚‹ã€‚
+		@param threadFunc	[in] ã‚¹ãƒ¬ãƒƒãƒ‰é–¢æ•°
+		@param pData		[in] ã‚¹ãƒ¬ãƒƒãƒ‰ã«å¼•ãæ¸¡ã™ãƒ‡ãƒ¼ã‚¿ãƒã‚¤ãƒ³ã‚¿
+		@return	æˆå¦
 	*/
 	bool Create( void (*threadFunc)( void* ), void* data );
 
 	/**
-		@brief ƒXƒŒƒbƒhI—¹‚ğŠm”F‚·‚éB
+		@brief ã‚¹ãƒ¬ãƒƒãƒ‰çµ‚äº†ã‚’ç¢ºèªã™ã‚‹ã€‚
 	*/
 	bool IsExitThread() const;
 
 	/**
-		@brief ƒXƒŒƒbƒhI—¹‚ğ‘Ò‚ÂB
+		@brief ã‚¹ãƒ¬ãƒƒãƒ‰çµ‚äº†ã‚’å¾…ã¤ã€‚
 	*/
 	bool Wait() const;
 };

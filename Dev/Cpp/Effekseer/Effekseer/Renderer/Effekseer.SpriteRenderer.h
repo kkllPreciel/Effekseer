@@ -1,4 +1,4 @@
-
+Ôªø
 #ifndef	__EFFEKSEER_SPRITE_RENDERER_H__
 #define	__EFFEKSEER_SPRITE_RENDERER_H__
 
@@ -34,9 +34,14 @@ public:
 		bool				ZTest;
 		bool				ZWrite;
 		BillboardType		Billboard;
+		bool				IsRightHand;
 
 		bool				Distortion;
 		float				DistortionIntensity;
+
+		float				DepthOffset;
+		bool				IsDepthOffsetScaledWithCamera;
+		bool				IsDepthOffsetScaledWithParticleScale;
 	};
 
 	struct InstanceParameter
@@ -44,7 +49,7 @@ public:
 		Matrix43		SRTMatrix43;
 		Color		AllColor;
 
-		// ç∂â∫ÅAâEâ∫ÅAç∂è„ÅAâEè„
+		// Â∑¶‰∏ã„ÄÅÂè≥‰∏ã„ÄÅÂ∑¶‰∏ä„ÄÅÂè≥‰∏ä
 		Color		Colors[4];
 
 		Vector2D	Positions[4];

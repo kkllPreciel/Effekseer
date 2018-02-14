@@ -1,4 +1,4 @@
-
+﻿
 #ifndef	__EFFEKSEERTOOL_BASE_H__
 #define	__EFFEKSEERTOOL_BASE_H__
 
@@ -7,8 +7,7 @@
 //----------------------------------------------------------------------------------
 #include <Effekseer.h>
 #include <EffekseerRenderer/EffekseerRendererDX9.Renderer.h>
-#include <EffekseerRenderer/EffekseerRendererDX9.SpriteRenderer.h>
-#include <EffekseerRenderer/EffekseerRendererDX9.RibbonRenderer.h>
+#include <EffekseerRenderer/EffekseerRendererDX9.RendererImplemented.h>
 
 //----------------------------------------------------------------------------------
 //
@@ -36,6 +35,15 @@ enum eProjectionType
 
 	PROJECTION_TYPE_DWORD = 0x7fffffff,
 };
+
+enum eDistortionType
+{
+	DistortionType_Current,
+	DistortionType_Effekseer120,
+	DistortionType_Disabled,
+};
+
+
 
 //----------------------------------------------------------------------------------
 //

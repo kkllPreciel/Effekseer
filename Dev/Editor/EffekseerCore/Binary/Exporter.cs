@@ -9,7 +9,7 @@ namespace Effekseer.Binary
 {
 	public class Exporter
 	{
-		const int Version = 9;
+		const int Version = 12;
 
 		/// <summary>
 		/// エフェクトデータの出力
@@ -173,26 +173,38 @@ namespace Effekseer.Binary
 					if (_node.IsRendered && _node.DrawingValues.Type.Value == Data.RendererValues.ParamaterType.Model)
 					{
 						var relative_path = _node.DrawingValues.Model.Model.RelativePath;
-						if (relative_path != string.Empty)
-						{
-							if (!models.Contains(relative_path))
-							{
-								models.Add(relative_path);
-							}
-						}
+
+                        if (!string.IsNullOrEmpty(relative_path))
+                        {
+                            relative_path = System.IO.Path.GetDirectoryName(relative_path) + "/" + System.IO.Path.GetFileNameWithoutExtension(relative_path) + ".efkmodel";
+
+                            if (relative_path != string.Empty)
+                            {
+                                if (!models.Contains(relative_path))
+                                {
+                                    models.Add(relative_path);
+                                }
+                            }
+                        }
+                       
 					}
 
 					if (_node.GenerationLocationValues.Type.Value == Data.GenerationLocationValues.ParameterType.Model)
 					{
 						var relative_path = _node.GenerationLocationValues.Model.Model.RelativePath;
 
-						if (relative_path != string.Empty)
-						{
-							if (!models.Contains(relative_path))
-							{
-								models.Add(relative_path);
-							}
-						}
+                        if (!string.IsNullOrEmpty(relative_path))
+                        {
+                            relative_path = System.IO.Path.GetDirectoryName(relative_path) + "/" + System.IO.Path.GetFileNameWithoutExtension(relative_path) + ".efkmodel";
+
+                            if (relative_path != string.Empty)
+                            {
+                                if (!models.Contains(relative_path))
+                                {
+                                    models.Add(relative_path);
+                                }
+                            }
+                        }
 					}
 				}
 
@@ -262,8 +274,12 @@ namespace Effekseer.Binary
 				data.Add(new byte[] { 0, 0 });
 			}
 
-			// 倍率を出力
+			// Export magnification
 			data.Add(BitConverter.GetBytes(magnification));
+
+			// Export default seed
+			int randomSeed = Core.Global.RandomSeed.Value;
+			data.Add(BitConverter.GetBytes(randomSeed));
 
 			// カリングを出力
 			data.Add(BitConverter.GetBytes((int)Core.Culling.Type.Value));
@@ -294,7 +310,20 @@ namespace Effekseer.Binary
 			{
 				List<byte[]> node_data = new List<byte[]>();
 
-				if (!n.IsRendered)
+				var isRenderParamExported = n.IsRendered.GetValue();
+
+				for (int i = 0; i < n.Children.Count; i++)
+				{
+					var nc = n.Children[i];
+					var v = nc.RendererCommonValues.ColorInheritType.GetValue();
+					if (v == Data.ParentEffectType.Already || v == Data.ParentEffectType.WhenCreating)
+					{
+						isRenderParamExported = true;
+						break;
+					}
+				}
+
+				if (!isRenderParamExported)
 				{
 					data.Add(((int)NodeType.None).GetBytes());
 				}
@@ -309,11 +338,11 @@ namespace Effekseer.Binary
 				else if (n.DrawingValues.Type.Value == Data.RendererValues.ParamaterType.Ribbon)
 				{
 					data.Add(((int)NodeType.Ribbon).GetBytes());
-                }
-                else if (n.DrawingValues.Type.Value == Data.RendererValues.ParamaterType.Ring)
-                {
-                    data.Add(((int)NodeType.Ring).GetBytes());
-                }
+				}
+				else if (n.DrawingValues.Type.Value == Data.RendererValues.ParamaterType.Ring)
+				{
+					data.Add(((int)NodeType.Ring).GetBytes());
+				}
 				else if (n.DrawingValues.Type.Value == Data.RendererValues.ParamaterType.Model)
 				{
 					data.Add(((int)NodeType.Model).GetBytes());
@@ -327,15 +356,34 @@ namespace Effekseer.Binary
 					throw new Exception();
 				}
 
+				// Whether to draw the node.
+				if (n.IsRendered)
+				{
+					int v = 1;
+					node_data.Add(BitConverter.GetBytes(v));
+				}
+				else
+				{
+					int v = 0;
+					node_data.Add(BitConverter.GetBytes(v));
+				}
+
 				node_data.Add(CommonValues.GetBytes(n.CommonValues));
 				node_data.Add(LocationValues.GetBytes(n.LocationValues, n.CommonValues.ScaleEffectType));
 				node_data.Add(LocationAbsValues.GetBytes(n.LocationAbsValues, n.CommonValues.ScaleEffectType));
 				node_data.Add(RotationValues.GetBytes(n.RotationValues));
-				node_data.Add(ScaleValues.GetBytes(n.ScalingValues,n.CommonValues.ScaleEffectType));
+				node_data.Add(ScaleValues.GetBytes(n.ScalingValues, n.CommonValues.ScaleEffectType));
 				node_data.Add(GenerationLocationValues.GetBytes(n.GenerationLocationValues, n.CommonValues.ScaleEffectType, model_and_index));
-				node_data.Add(RendererCommonValues.GetBytes(n.RendererCommonValues, texture_and_index, distortionTexture_and_index));
 
-				if (n.IsRendered)
+				// Export depth
+                node_data.Add(n.DepthValues.DepthOffset.Value.GetBytes());
+				node_data.Add(BitConverter.GetBytes(n.DepthValues.IsScaleChangedDependingOnDepthOffset.Value ? 1 : 0));
+				node_data.Add(BitConverter.GetBytes(n.DepthValues.IsDepthOffsetChangedDependingOnParticleScale.Value ? 1 : 0));
+				node_data.Add(n.DepthValues.SoftParticle.Value.GetBytes());
+
+                node_data.Add(RendererCommonValues.GetBytes(n.RendererCommonValues, texture_and_index, distortionTexture_and_index));
+
+				if (isRenderParamExported)
 				{
 					node_data.Add(RendererValues.GetBytes(n.DrawingValues, texture_and_index, normalTexture_and_index, model_and_index));
 				}
@@ -346,7 +394,7 @@ namespace Effekseer.Binary
 
 				data.Add(node_data.ToArray().ToArray());
 
-                data.Add(SoundValues.GetBytes(n.SoundValues, wave_and_index));
+				data.Add(SoundValues.GetBytes(n.SoundValues, wave_and_index));
 
 				data.Add(n.Children.Count.GetBytes());
 				for (int i = 0; i < n.Children.Count; i++)

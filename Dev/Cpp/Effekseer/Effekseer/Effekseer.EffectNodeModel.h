@@ -1,4 +1,4 @@
-
+﻿
 #ifndef	__EFFEKSEER_ParameterNODE_MODEL_H__
 #define	__EFFEKSEER_ParameterNODE_MODEL_H__
 
@@ -20,7 +20,7 @@ namespace Effekseer
 //
 //----------------------------------------------------------------------------------
 class EffectNodeModel
-	: public EffectNode
+	: public EffectNodeImplemented
 {
 	friend class Manager;
 	friend class Effect;
@@ -30,19 +30,20 @@ public:
 
 	struct InstanceValues
 	{
-		// �F
+		// 色
 		color _color;
+		color _original;
 
 		union 
 		{
 			struct
 			{
-			
+				color _color;
 			} fixed;
 
 			struct
 			{
-
+				color _color;
 			} random;
 
 			struct
@@ -64,13 +65,14 @@ public:
 	AlphaBlendType		AlphaBlend;
 	int32_t			ModelIndex;
 	int32_t			NormalTextureIndex;
+	BillboardType	Billboard;
 	bool			Lighting;
 	CullingType	Culling;
 
 	StandardColorParameter	AllColor;
 
 	EffectNodeModel( Effect* effect, unsigned char*& pos )
-		: EffectNode( effect, pos )
+		: EffectNodeImplemented(effect, pos)
 	{
 	}
 

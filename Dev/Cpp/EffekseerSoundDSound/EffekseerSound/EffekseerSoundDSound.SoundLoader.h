@@ -1,4 +1,4 @@
-
+﻿
 #ifndef	__EFFEKSEERSOUND_SOUND_LOADER_H__
 #define	__EFFEKSEERSOUND_SOUND_LOADER_H__
 
@@ -21,9 +21,11 @@ class SoundLoader
 	: public ::Effekseer::SoundLoader
 {
 	SoundImplemented*	m_sound;
+	::Effekseer::FileInterface* m_fileInterface;
+	::Effekseer::DefaultFileInterface m_defaultFileInterface;
 
 public:
-	SoundLoader(SoundImplemented* sound);
+	SoundLoader( SoundImplemented* sound, ::Effekseer::FileInterface* fileInterface = NULL );
 
 	virtual ~SoundLoader();
 

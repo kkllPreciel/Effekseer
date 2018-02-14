@@ -1,4 +1,4 @@
-
+ï»¿
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
@@ -18,10 +18,70 @@
 //-----------------------------------------------------------------------------------
 namespace EffekseerRendererGL
 {
+
+static const char g_header_vs_gl3_src [] =
+"#version 330\n" \
+"#define lowp\n" \
+"#define mediump\n" \
+"#define highp\n" \
+"#define IN in\n" \
+"#define OUT out\n";
+
+static const char g_header_fs_gl3_src [] =
+"#version 330\n" \
+"#define lowp\n" \
+"#define mediump\n" \
+"#define highp\n" \
+"#define IN in\n" \
+"#define TEX2D texture\n" \
+"layout (location = 0) out vec4 FRAGCOLOR;\n";
+
+static const char g_header_vs_gles3_src [] =
+"#version 300 es\n" \
+"precision mediump float;\n" \
+"#define IN in\n" \
+"#define OUT out\n";
+
+static const char g_header_fs_gles3_src [] =
+"#version 300 es\n" \
+"precision mediump float;\n" \
+"#define IN in\n" \
+"#define TEX2D texture\n" \
+"layout (location = 0) out vec4 FRAGCOLOR;\n";
+
+static const char g_header_vs_gles2_src [] =
+"precision mediump float;\n" \
+"#define IN attribute\n" \
+"#define OUT varying\n";
+
+static const char g_header_fs_gles2_src [] =
+"precision mediump float;\n" \
+"#define IN varying\n" \
+"#define TEX2D texture2D\n" \
+"#define FRAGCOLOR gl_FragColor\n";
+
+static const char g_header_vs_gl2_src [] =
+"#version 110\n" \
+"#define lowp\n" \
+"#define mediump\n" \
+"#define highp\n" \
+"#define IN attribute\n" \
+"#define OUT varying\n";
+
+static const char g_header_fs_gl2_src [] =
+"#version 110\n" \
+"#define lowp\n" \
+"#define mediump\n" \
+"#define highp\n" \
+"#define IN varying\n" \
+"#define TEX2D texture2D\n" \
+"#define FRAGCOLOR gl_FragColor\n";
+
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
 bool Shader::CompileShader(
+	RendererImplemented* renderer,
 	GLuint& program,
 	const char* vs_src,
 	int32_t vertexShaderSize,
@@ -29,41 +89,55 @@ bool Shader::CompileShader(
 	int32_t pixelShaderSize,
 	const char* name)
 {
-	const char* src_data[1];
-	GLint src_size[1];
+	const char* src_data[2];
+	GLint src_size[2];
 
 	GLuint vert_shader, frag_shader;
 	GLint res_vs, res_fs, res_link;
 	
 
-	// ƒo[ƒeƒbƒNƒXƒVƒF[ƒ_‚ğƒRƒ“ƒpƒCƒ‹
-	src_data[0] = vs_src;
-	src_size[0] = (GLint)strlen(vs_src);
+	// ãƒãƒ¼ãƒ†ãƒƒã‚¯ã‚¹ã‚·ã‚§ãƒ¼ãƒ€ã‚’ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«
+	if (renderer->GetDeviceType() == OpenGLDeviceType::OpenGL3) src_data[0] = g_header_vs_gl3_src;
+	if (renderer->GetDeviceType() == OpenGLDeviceType::OpenGL2) src_data[0] = g_header_vs_gl2_src;
+	if (renderer->GetDeviceType() == OpenGLDeviceType::OpenGLES3) src_data[0] = g_header_vs_gles3_src;
+	if (renderer->GetDeviceType() == OpenGLDeviceType::OpenGLES2 || renderer->GetDeviceType() == OpenGLDeviceType::Emscripten) src_data[0] = g_header_vs_gles2_src;
+
+	src_size[0] = (GLint) strlen(src_data[0]);
+	src_data[1] = vs_src;
+	src_size[1] = (GLint)strlen(vs_src);
+	
 	vert_shader = GLExt::glCreateShader(GL_VERTEX_SHADER);
-	GLExt::glShaderSource(vert_shader, 1, src_data, src_size);
+	GLExt::glShaderSource(vert_shader, 2, src_data, src_size);
 	GLExt::glCompileShader(vert_shader);
 	GLExt::glGetShaderiv(vert_shader, GL_COMPILE_STATUS, &res_vs);
 
-	// ƒtƒ‰ƒOƒƒ“ƒgƒVƒF[ƒ_‚ğƒRƒ“ƒpƒCƒ‹
-	src_data[0] = fs_src;
-	src_size[0] = strlen(fs_src);
+	// ãƒ•ãƒ©ã‚°ãƒ¡ãƒ³ãƒˆã‚·ã‚§ãƒ¼ãƒ€ã‚’ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«
+	if (renderer->GetDeviceType() == OpenGLDeviceType::OpenGL3) src_data[0] = g_header_fs_gl3_src;
+	if (renderer->GetDeviceType() == OpenGLDeviceType::OpenGL2) src_data[0] = g_header_fs_gl2_src;
+	if (renderer->GetDeviceType() == OpenGLDeviceType::OpenGLES3) src_data[0] = g_header_fs_gles3_src;
+	if (renderer->GetDeviceType() == OpenGLDeviceType::OpenGLES2 || renderer->GetDeviceType() == OpenGLDeviceType::Emscripten) src_data[0] = g_header_fs_gles2_src;
+
+	src_size[0] = (GLint) strlen(src_data[0]);
+	src_data[1] = fs_src;
+	src_size[1] = strlen(fs_src);
+
 	frag_shader = GLExt::glCreateShader(GL_FRAGMENT_SHADER);
-	GLExt::glShaderSource(frag_shader, 1, src_data, src_size);
+	GLExt::glShaderSource(frag_shader, 2, src_data, src_size);
 	GLExt::glCompileShader(frag_shader);
 	GLExt::glGetShaderiv(frag_shader, GL_COMPILE_STATUS, &res_fs);
 	
-	// ƒVƒF[ƒ_ƒvƒƒOƒ‰ƒ€‚Ìì¬
+	// ã‚·ã‚§ãƒ¼ãƒ€ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã®ä½œæˆ
 	program = GLExt::glCreateProgram();
 	GLExt::glAttachShader(program, vert_shader);
 	GLExt::glAttachShader(program, frag_shader);
 	
-	// ƒVƒF[ƒ_ƒvƒƒOƒ‰ƒ€‚ÌƒŠƒ“ƒN
+	// ã‚·ã‚§ãƒ¼ãƒ€ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã®ãƒªãƒ³ã‚¯
 	GLExt::glLinkProgram(program);
 	GLExt::glGetProgramiv(program, GL_LINK_STATUS, &res_link);
 
 #ifndef NDEBUG
 	{
-		// ƒGƒ‰[o—Í
+		// ã‚¨ãƒ©ãƒ¼å‡ºåŠ›
 		char log[512];
 		int32_t log_size;
 		GLExt::glGetShaderInfoLog(vert_shader, sizeof(log), &log_size, log);
@@ -86,7 +160,7 @@ bool Shader::CompileShader(
 		}
 	}
 #endif
-	// ƒVƒF[ƒ_ƒIƒuƒWƒFƒNƒg‚Ìíœ
+	// ã‚·ã‚§ãƒ¼ãƒ€ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®å‰Šé™¤
 	GLExt::glDeleteShader(frag_shader);
 	GLExt::glDeleteShader(vert_shader);
 
@@ -173,6 +247,7 @@ Shader* Shader::Create(
 	assert( renderer != NULL );
 
 	if(CompileShader(
+		renderer,
 		program,
 		vs_src,
 		vertexShaderSize,
@@ -211,6 +286,7 @@ void Shader::OnResetDevice()
 	GLuint program;
 	
 	if(CompileShader(
+		GetRenderer(),
 		program,
 		(const char*)&(m_vsSrc[0]),
 		m_vsSrc.size(),
@@ -236,6 +312,7 @@ void Shader::OnChangeDevice()
 	GLuint program;
 	
 	if(CompileShader(
+		GetRenderer(),
 		program,
 		(const char*)&(m_vsSrc[0]),
 		m_vsSrc.size(),

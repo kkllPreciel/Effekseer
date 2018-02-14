@@ -1,4 +1,4 @@
-
+ï»¿
 #ifndef	__EFFEKSEER_INSTANCE_H__
 #define	__EFFEKSEER_INSTANCE_H__
 
@@ -11,6 +11,7 @@
 #include "Effekseer.Matrix43.h"
 #include "Effekseer.RectF.h"
 #include "Effekseer.Color.h"
+#include "Effekseer.IntrusiveList.h"
 
 #include "Effekseer.EffectNodeSprite.h"
 #include "Effekseer.EffectNodeRibbon.h"
@@ -28,9 +29,9 @@ namespace Effekseer
 //----------------------------------------------------------------------------------
 
 /**
-	@brief	ƒGƒtƒFƒNƒg‚ÌÀ‘Ì
+	@brief	ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã®å®Ÿä½“
 */
-class Instance
+class Instance : public IntrusiveList<Instance>::Node
 {
 	friend class Manager;
 	friend class InstanceContainer;
@@ -39,29 +40,35 @@ class Instance
 public:
 	static const int32_t ChildrenMax = 16;
 
-	// ƒ}ƒl[ƒWƒƒ
+	// ãƒãƒãƒ¼ã‚¸ãƒ£
 	Manager*	m_pManager;
 
-	// ƒpƒ‰ƒ[ƒ^[
-	EffectNode* m_pEffectNode;
+	// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼
+	EffectNodeImplemented* m_pEffectNode;
 
-	// ƒRƒ“ƒeƒi
+	// ã‚³ãƒ³ãƒ†ãƒŠ
 	InstanceContainer*	m_pContainer;
 
-	// ƒOƒ‹[ƒv‚Ì˜AŒ‹ƒŠƒXƒg‚Ìæ“ª
+	// ã‚°ãƒ«ãƒ¼ãƒ—ã®é€£çµãƒªã‚¹ãƒˆã®å…ˆé ­
 	InstanceGroup*	m_headGroups;
 
-	// e
+	// è¦ª
 	Instance*	m_pParent;
 	
-	// ƒOƒ[ƒoƒ‹ˆÊ’u
+	// ã‚°ãƒ­ãƒ¼ãƒãƒ«ä½ç½®
 	Vector3D	m_GlobalPosition;
 	Vector3D	m_GlobalVelocity;
 	
-	// ƒOƒ[ƒoƒ‹ˆÊ’u•â³
+	// ã‚°ãƒ­ãƒ¼ãƒãƒ«ä½ç½®è£œæ­£
 	Vector3D	m_GlobalRevisionLocation;
 	Vector3D	m_GlobalRevisionVelocity;
 	
+	// Color for binding
+	color		ColorInheritance;
+
+	// Parent color
+	color		ColorParent;
+
 	union 
 	{
 		struct
@@ -178,7 +185,7 @@ public:
 
 	} scaling_values;
 
-	// •`‰æ
+	// æç”»
 	union
 	{
 		EffectNodeSprite::InstanceValues	sprite;
@@ -188,97 +195,124 @@ public:
 		EffectNodeTrack::InstanceValues		track;
 	} rendererValues;
 	
-	// ‰¹
+	// éŸ³
 	union
 	{
 		int		delay;
 	} soundValues;
 
-	// ó‘Ô
+	// çŠ¶æ…‹
 	eInstanceState	m_State;
 
-	// ¶‘¶ŠÔ
+	// ç”Ÿå­˜æ™‚é–“
 	float		m_LivedTime;
 
-	// ¶¬‚³‚ê‚Ä‚©‚ç‚ÌŠÔ
+	// ç”Ÿæˆã•ã‚Œã¦ã‹ã‚‰ã®æ™‚é–“
 	float		m_LivingTime;
 
-	/* ¶¬‚³‚ê‚½q‚ÌŒÂ” */
-	int32_t		m_generatedChildrenCount[ChildrenMax];
+	// The time offset for UV
+	int32_t		uvTimeOffset;
 
-	/* Ÿ‚Éq‚ğ¶¬‚·‚éŠÔ */
-	float		m_nextGenerationTime[ChildrenMax];
+	// Scroll, FCurve area for UV
+	RectF		uvAreaOffset;
 
-	// ¶¬ˆÊ’u
+	// Scroll speed for UV
+	Vector2D	uvScrollSpeed;
+
+	// The number of generated chiledren. (fixed size)
+	int32_t		m_fixedGeneratedChildrenCount[ChildrenMax];
+
+	// The time to generate next child.  (fixed size)
+	float		m_fixedNextGenerationTime[ChildrenMax];
+
+	// The number of generated chiledren. (flexible size)
+	int32_t*		m_flexibleGeneratedChildrenCount;
+
+	// The time to generate next child.  (flexible size)
+	float*		m_flexibleNextGenerationTime;
+
+	// The number of generated chiledren. (actually used)
+	int32_t*		m_generatedChildrenCount;
+
+	// The time to generate next child.  (actually used)
+	float*			m_nextGenerationTime;
+
+	// Spawning Method matrix
 	Matrix43		m_GenerationLocation;
 
-	// •ÏŠ·—ps—ñ
+	// å¤‰æ›ç”¨è¡Œåˆ—
 	Matrix43		m_GlobalMatrix43;
 
-	// e‚Ì•ÏŠ·—ps—ñ
+	// è¦ªã®å¤‰æ›ç”¨è¡Œåˆ—
 	Matrix43		m_ParentMatrix43;
 
-	/* ŠÔ‚ği‚ß‚é‚©‚Ç‚¤‚©? */
+	// å¤‰æ›ç”¨è¡Œåˆ—ãŒè¨ˆç®—æ¸ˆã‹ã©ã†ã‹
+	bool			m_GlobalMatrix43Calculated;
+
+	// è¦ªã®å¤‰æ›ç”¨è¡Œåˆ—ãŒè¨ˆç®—æ¸ˆã‹ã©ã†ã‹
+	bool			m_ParentMatrix43Calculated;
+
+	/* æ™‚é–“ã‚’é€²ã‚ã‚‹ã‹ã©ã†ã‹? */
 	bool			m_stepTime;
 
-	/* XV”Ô† */
+	/* æ›´æ–°ç•ªå· */
 	uint32_t		m_sequenceNumber;
 
-	// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+	// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	Instance( Manager* pManager, EffectNode* pEffectNode, InstanceContainer* pContainer );
 
-	// ƒfƒXƒgƒ‰ƒNƒ^
+	// ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	virtual ~Instance();
 
 public:
 	/**
-		@brief	ó‘Ô‚Ìæ“¾
+		@brief	çŠ¶æ…‹ã®å–å¾—
 	*/
 	eInstanceState GetState() const;
 
 	/**
-		@brief	s—ñ‚Ìæ“¾
+		@brief	è¡Œåˆ—ã®å–å¾—
 	*/
 	const Matrix43& GetGlobalMatrix43() const;
 
 	/**
-		@brief	‰Šú‰»
+		@brief	åˆæœŸåŒ–
 	*/
 	void Initialize( Instance* parent, int32_t instanceNumber );
 
 	/**
-		@brief	XV
+		@brief	æ›´æ–°
 	*/
 	void Update( float deltaFrame, bool shown );
 
 	/**
-		@brief	•`‰æ
+		@brief	æç”»
 	*/
 	void Draw();
 
 	/**
-		@brief	”jŠü
+		@brief	ç ´æ£„
 	*/
 	void Kill();
 
 	/**
-		@brief	UV‚ÌˆÊ’uæ“¾
+		@brief	UVã®ä½ç½®å–å¾—
 	*/
 	RectF GetUV() const;
 
 private:
 	/**
-		@brief	s—ñ‚ÌXV
+		@brief	è¡Œåˆ—ã®æ›´æ–°
 	*/
 	void CalculateMatrix( float deltaFrame );
 	
 	/**
-		@brief	s—ñ‚ÌXV
+		@brief	è¡Œåˆ—ã®æ›´æ–°
 	*/
-	void CalculateParentMatrix();
+	void CalculateParentMatrix( float deltaFrame );
 	
 	/**
-		@brief	â‘Îƒpƒ‰ƒ[ƒ^‚Ì”½‰f
+		@brief	çµ¶å¯¾ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã®åæ˜ 
 	*/
 	void ModifyMatrixFromLocationAbs( float deltaFrame );
 	

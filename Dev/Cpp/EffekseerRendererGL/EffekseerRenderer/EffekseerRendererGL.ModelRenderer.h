@@ -1,4 +1,4 @@
-
+﻿
 #ifndef	__EFFEKSEERRENDERER_GL_MODEL_RENDERER_H__
 #define	__EFFEKSEERRENDERER_GL_MODEL_RENDERER_H__
 
@@ -36,7 +36,7 @@ public:
 		AttribBinormal,
 		AttribTangent,
 		AttribTexCoord,
-		
+		AttribColor,
 #if defined(MODEL_SOFTWARE_INSTANCING)
 		AttribInstanceID,
 		AttribUVOffset,
@@ -100,9 +100,11 @@ public:
 	static ModelRenderer* Create( RendererImplemented* renderer );
 
 public:
-	void BeginRendering(const efkModelNodeParam& parameter, int32_t count, void* userData);
+	void BeginRendering(const efkModelNodeParam& parameter, int32_t count, void* userData) override;
 
-	void EndRendering( const efkModelNodeParam& parameter, void* userData );
+	virtual void Rendering(const efkModelNodeParam& parameter, const InstanceParameter& instanceParameter, void* userData) override;
+
+	void EndRendering( const efkModelNodeParam& parameter, void* userData ) override;
 };
 //----------------------------------------------------------------------------------
 //

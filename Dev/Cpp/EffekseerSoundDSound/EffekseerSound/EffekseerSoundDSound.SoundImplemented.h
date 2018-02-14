@@ -1,4 +1,4 @@
-
+﻿
 #ifndef	__EFFEKSEERRSOUND_SOUND_IMPLEMENTED_H__
 #define	__EFFEKSEERRSOUND_SOUND_IMPLEMENTED_H__
 
@@ -36,7 +36,7 @@ public:
 	SoundImplemented();
 	virtual ~SoundImplemented();
 
-	void Destory();
+	void Destroy();
 
 	bool Initialize( IDirectSound8* dsound );
 	

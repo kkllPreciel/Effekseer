@@ -1,4 +1,4 @@
-
+Ôªø
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
@@ -6,6 +6,7 @@
 #include "EffekseerSoundDSound.SoundImplemented.h"
 #include "EffekseerSoundDSound.SoundLoader.h"
 #include <algorithm>
+#include <memory>
 
 //-----------------------------------------------------------------------------------
 //
@@ -15,8 +16,8 @@ namespace EffekseerSound
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-SoundLoader::SoundLoader(SoundImplemented* sound)
-	: m_sound(sound)
+SoundLoader::SoundLoader( SoundImplemented* sound, ::Effekseer::FileInterface* fileInterface )
+	: m_sound(sound), m_fileInterface(fileInterface)
 {
 }
 
@@ -32,65 +33,103 @@ SoundLoader::~SoundLoader()
 //----------------------------------------------------------------------------------
 void* SoundLoader::Load( const EFK_CHAR* path )
 {
-	HRESULT hr;
+	assert( path != NULL );
 
-	FILE* fp = NULL;
-	errno_t err = _wfopen_s(&fp, (const wchar_t*)path, L"rb");
-	if (fp == NULL) {
-		return NULL;
-	}
+	HRESULT hr;
+	
+	std::unique_ptr<::Effekseer::FileReader> 
+		reader( m_fileInterface->OpenRead( path ) );
+	if( reader.get() == NULL ) return false;
 
 	uint32_t chunkIdent, chunkSize;
-	// RIFFÉ`ÉÉÉìÉNÇÉ`ÉFÉbÉN
-	fread(&chunkIdent, 1, 4, fp);
-	fread(&chunkSize, 1, 4, fp);
+	// RIFF„ÉÅ„É£„É≥„ÇØ„Çí„ÉÅ„Çß„ÉÉ„ÇØ
+	reader->Read(&chunkIdent, 4);
+	reader->Read(&chunkSize, 4);
 	if (memcmp(&chunkIdent, "RIFF", 4) != 0) {
 		return NULL;
 	}
 
-	// WAVEÉVÉìÉ{ÉãÇÉ`ÉFÉbÉN
-	fread(&chunkIdent, 1, 4, fp);
+	// WAVE„Ç∑„É≥„Éú„É´„Çí„ÉÅ„Çß„ÉÉ„ÇØ
+	reader->Read(&chunkIdent, 4);
 	if (memcmp(&chunkIdent, "WAVE", 4) != 0) {
 		return NULL;
 	}
 	
 	WAVEFORMATEX wavefmt = {0};
 	for (;;) {
-		fread(&chunkIdent, 1, 4, fp);
-		fread(&chunkSize, 1, 4, fp);
+		reader->Read(&chunkIdent, 4);
+		reader->Read(&chunkSize, 4);
 
 		if (memcmp(&chunkIdent, "fmt ", 4) == 0) {
-			// ÉtÉHÅ[É}ÉbÉgÉ`ÉÉÉìÉN
-#ifdef _MSC_VER
-			uint32_t size = min(chunkSize, sizeof(wavefmt));
-#else
-			uint32_t size = std::min( static_cast<size_t>(chunkSize), sizeof(wavefmt));
-#endif
-			fread(&wavefmt, 1, size, fp);
+			// „Éï„Ç©„Éº„Éû„ÉÉ„Éà„ÉÅ„É£„É≥„ÇØ
+			uint32_t size = (chunkSize < (uint32_t)sizeof(wavefmt)) ? chunkSize : (uint32_t)sizeof(wavefmt);
+			reader->Read(&wavefmt, size);
 			if (size < chunkSize) {
-				fseek(fp, chunkSize - size, SEEK_CUR);
+				reader->Seek(reader->GetPosition() + chunkSize - size);
 			}
 		} else if (memcmp(&chunkIdent, "data", 4) == 0) {
-			// ÉfÅ[É^É`ÉÉÉìÉN
+			// „Éá„Éº„Çø„ÉÅ„É£„É≥„ÇØ
 			break;
 		} else {
-			// ïsñæÇ»É`ÉÉÉìÉNÇÕÉXÉLÉbÉv
-			fseek(fp, chunkSize, SEEK_CUR);
+			// ‰∏çÊòé„Å™„ÉÅ„É£„É≥„ÇØ„ÅØ„Çπ„Ç≠„ÉÉ„Éó
+			reader->Seek(reader->GetPosition() + chunkSize);
 		}
 	}
 	
-	// ÉtÉHÅ[É}ÉbÉgÉ`ÉFÉbÉN
+	// „Éï„Ç©„Éº„Éû„ÉÉ„Éà„ÉÅ„Çß„ÉÉ„ÇØ
 	if (wavefmt.wFormatTag != WAVE_FORMAT_PCM || wavefmt.nChannels > 2) {
 		return NULL;
 	}
 
-	// DirectSoundÉoÉbÉtÉ@ÇçÏê¨
+	uint8_t* buffer;
+	uint32_t size;
+	switch (wavefmt.wBitsPerSample) {
+	case 8:
+		// 8bit -> 16bit PCMÂ§âÊèõ
+		size = chunkSize * 2;
+		buffer = new uint8_t[size];
+		reader->Read(&buffer[size / 2], chunkSize);
+		{
+			int16_t* dst = (int16_t*)&buffer[0];
+			uint8_t* src = (uint8_t*)&buffer[size / 2];
+			for (uint32_t i = 0; i < size; i += 2) {
+				*dst++ = (int16_t)(((int32_t)*src++ - 128) << 8);
+			}
+		}
+		break;
+	case 16:
+		// „Åù„ÅÆ„Åæ„ÅæË™≠„ÅøËæº„Åø
+		buffer = new uint8_t[chunkSize];
+		size = reader->Read(buffer, chunkSize);
+		break;
+	case 24:
+		// 24bit -> 16bit PCMÂ§âÊèõ
+		size = chunkSize * 2 / 3;
+		buffer = new uint8_t[size];
+		{
+			uint8_t* chunkData = new uint8_t[chunkSize];
+			reader->Read(chunkData, chunkSize);
+
+			int16_t* dst = (int16_t*)&buffer[0];
+			uint8_t* src = (uint8_t*)&chunkData[0];
+			for (uint32_t i = 0; i < size; i += 2) {
+				*dst++ = (int16_t)(src[1] | (src[2] << 8));
+				src += 3;
+			}
+			delete[] chunkData;
+		}
+		break;
+	default:
+		return NULL;
+	}
+
+	// DirectSound„Éê„ÉÉ„Éï„Ç°„Çí‰ΩúÊàê
 	DSBUFFERDESC dsdesc;
     ZeroMemory(&dsdesc,sizeof(DSBUFFERDESC));
     dsdesc.dwSize = sizeof(DSBUFFERDESC);
 	dsdesc.dwFlags = DSBCAPS_LOCSOFTWARE | DSBCAPS_CTRLVOLUME | 
 		DSBCAPS_CTRLFREQUENCY | DSBCAPS_CTRLPAN;
-    dsdesc.dwBufferBytes = chunkSize;
+    dsdesc.dwBufferBytes = size;
     dsdesc.lpwfxFormat = &wavefmt;
     dsdesc.guid3DAlgorithm = DS3DALG_DEFAULT;
 
@@ -102,19 +141,19 @@ void* SoundLoader::Load( const EFK_CHAR* path )
 		dsbufTmp->Release();
 	}
 	if (hr != DS_OK) {
-		fclose(fp);
-        return FALSE;
+		delete[] buffer;
+        return NULL;
     }
 
-    // ÉoÉbÉtÉ@ÇÉçÉbÉNÇµÇƒÉçÅ[Éh
+    // „Éê„ÉÉ„Éï„Ç°„Çí„É≠„ÉÉ„ÇØ„Åó„Å¶„É≠„Éº„Éâ
     LPVOID bufptr;
     DWORD bufsize;
 	hr = dsbuf->Lock(0, 0, &bufptr, &bufsize, NULL, NULL, DSBLOCK_ENTIREBUFFER);
 	if (hr == DS_OK) {
-		fread(bufptr, bufsize, 1, fp);
+		memcpy(bufptr, buffer, size);
 		hr = dsbuf->Unlock(bufptr, bufsize, NULL, 0);
 	}
-	fclose(fp);
+	delete[] buffer;
 
 	SoundData* soundData = new SoundData;
 	soundData->channels = wavefmt.nChannels;

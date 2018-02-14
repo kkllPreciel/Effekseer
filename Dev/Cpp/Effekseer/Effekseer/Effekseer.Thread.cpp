@@ -1,4 +1,4 @@
-
+Ôªø
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -14,7 +14,8 @@ namespace Effekseer {
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-DWORD EFK_STDCALL Thread::ThreadProc( void* arguments )
+/* DWORD„ÇíÁΩÆ„Åç„Åã„Åà */
+unsigned long EFK_STDCALL Thread::ThreadProc(void* arguments)
 {
 	Thread* thread = (Thread*)(arguments);
 
@@ -63,7 +64,7 @@ bool Thread::Create( void (*threadFunc)( void* ), void* data )
 		m_mainProc	= threadFunc;
 		m_thread	= ::CreateThread( NULL, 0, ThreadProc, this, CREATE_SUSPENDED, NULL );
 
-		// ÉXÉåÉbÉhäJén
+		// „Çπ„É¨„ÉÉ„ÉâÈñãÂßã
 		::SetThreadPriority( m_thread, THREAD_PRIORITY_NORMAL );
 		::ResumeThread( m_thread );
 
@@ -96,6 +97,44 @@ bool Thread::Wait() const
 	return true;
 }
 
+#elif defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE)
+	//-----------------------------------------------------------------------------------
+	//
+	//-----------------------------------------------------------------------------------
+	Thread::Thread()
+	{
+	}
+
+	//-----------------------------------------------------------------------------------
+	//
+	//-----------------------------------------------------------------------------------
+	Thread::~Thread()
+	{
+	}
+
+	//-----------------------------------------------------------------------------------
+	//
+	//-----------------------------------------------------------------------------------
+	bool Thread::Create(void(*threadFunc)(void*), void* data)
+	{
+		return false;
+	}
+
+	//-----------------------------------------------------------------------------------
+	//
+	//-----------------------------------------------------------------------------------
+	bool Thread::IsExitThread() const
+	{
+		return false;
+	}
+
+	//-----------------------------------------------------------------------------------
+	//
+	//-----------------------------------------------------------------------------------
+	bool Thread::Wait() const
+	{
+		return false;
+	}
 #else
 
 //-----------------------------------------------------------------------------------
@@ -125,8 +164,8 @@ void* Thread::ThreadProc( void* arguments )
 //
 //-----------------------------------------------------------------------------------
 Thread::Thread()
-	: m_running		( false )
-	, m_thread		()
+	: m_thread		()
+	, m_running		( false )
 	, m_data		( NULL )
 	, m_mainProc	( NULL )
 {
@@ -154,7 +193,7 @@ bool Thread::Create( void (*threadFunc)( void* ), void* data )
 		pthread_attr_t attr;
 		pthread_attr_init( &attr );
 
-		// ÉXÉåÉbÉhäJén
+		// „Çπ„É¨„ÉÉ„ÉâÈñãÂßã
 		m_running = true;
 		pthread_create( &m_thread, &attr, ThreadProc, this );
 		

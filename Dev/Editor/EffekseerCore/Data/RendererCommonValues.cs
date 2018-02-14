@@ -112,6 +112,19 @@ namespace Effekseer.Data
 		[IO(Export = true)]
 		public UVScrollParamater UVScroll { get; private set; }
 
+		[Selected(ID = 2, Value = 4)]
+		[IO(Export = true)]
+		public UVFCurveParamater UVFCurve { get; private set; }
+
+		[Name(language = Language.Japanese, value = "色への影響")]
+		[Description(language = Language.Japanese, value = "親ノードからの色への影響")]
+		[Name(language = Language.English, value = "Inherit Color")]
+		[Description(language = Language.English, value = "When this instance should copy its parent node's color")]
+		public Value.Enum<ParentEffectType> ColorInheritType
+		{
+			get;
+			private set;
+		}
 
 		[Name(language = Language.Japanese, value = "歪み")]
 		[Name(language = Language.English, value = "Distortion")]
@@ -123,14 +136,7 @@ namespace Effekseer.Data
 
 		internal RendererCommonValues()
 		{
-			if(Core.Language == Language.Japanese)
-			{
-				ColorTexture = new Value.PathForImage("画像ファイル (*.png)|*.png", true, "");
-			}
-			else if(Core.Language == Language.English)
-			{
-				ColorTexture = new Value.PathForImage("Image File (*.png)|*.png", true, "");
-			}
+            ColorTexture = new Value.PathForImage(Properties.Resources.ImageFilter, true, "");
 			
 			AlphaBlend = new Value.Enum<AlphaBlendType>(AlphaBlendType.Blend);
 			Filter = new Value.Enum<FilterType>(FilterType.Linear);
@@ -150,9 +156,12 @@ namespace Effekseer.Data
 			UVFixed = new UVFixedParamater();
 			UVAnimation = new UVAnimationParamater();
 			UVScroll = new UVScrollParamater();
+			UVFCurve = new UVFCurveParamater();
 
 			ZWrite = new Value.Boolean(false);
 			ZTest = new Value.Boolean(true);
+
+			ColorInheritType = new Value.Enum<ParentEffectType>(ParentEffectType.NotBind);
 
 			Distortion = new Value.Boolean(false);
 			DistortionIntensity = new Value.Float(1.0f, float.MaxValue, float.MinValue, 0.1f);
@@ -268,7 +277,7 @@ namespace Effekseer.Data
 
 			[Name(value = "1枚あたりの時間", language = Language.Japanese)]
 			[Name(value = "Frame Length", language = Language.English)]
-			public Value.Int FrameLength { get; private set; }
+			public Value.IntWithInifinite FrameLength { get; private set; }
 
 			[Name(value = "横方向枚数", language = Language.Japanese)]
 			[Name(value = "X-Count", language = Language.English)]
@@ -282,14 +291,19 @@ namespace Effekseer.Data
 			[Name(value = "Loop", language = Language.English)]
 			public Value.Enum<LoopType> LoopType { get; private set; }
 
+			[Name(value = "開始枚数", language = Language.Japanese)]
+			[Name(value = "Start Sheet", language = Language.English)]
+			public Value.IntWithRandom StartSheet { get; private set; }
+
 			public UVAnimationParamater()
 			{
 				Start = new Value.Vector2D();
 				Size = new Value.Vector2D();
-				FrameLength = new Value.Int(1, int.MaxValue, 1);
+				FrameLength = new Value.IntWithInifinite(1, false, int.MaxValue, 1);
 				FrameCountX = new Value.Int(1, int.MaxValue, 1);
 				FrameCountY = new Value.Int(1, int.MaxValue, 1);
 				LoopType = new Value.Enum<LoopType>(RendererCommonValues.LoopType.Once);
+				StartSheet = new Value.IntWithRandom(0, int.MaxValue, 0);
 			}
 		}
 
@@ -297,20 +311,40 @@ namespace Effekseer.Data
 		{
 			[Name(value = "始点", language = Language.Japanese)]
 			[Name(value = "Start", language = Language.English)]
-			public Value.Vector2D Start { get; private set; }
+			public Value.Vector2DWithRandom Start { get; private set; }
+
 			[Name(value = "大きさ", language = Language.Japanese)]
 			[Name(value = "Size", language = Language.English)]
-			public Value.Vector2D Size { get; private set; }
+			public Value.Vector2DWithRandom Size { get; private set; }
 
 			[Name(value = "移動速度", language = Language.Japanese)]
 			[Name(value = "Scroll Speed", language = Language.English)]
-			public Value.Vector2D Speed { get; private set; }
+			public Value.Vector2DWithRandom Speed { get; private set; }
 
 			public UVScrollParamater()
 			{
-				Start = new Value.Vector2D();
-				Size = new Value.Vector2D();
-				Speed = new Value.Vector2D();
+				Start = new Value.Vector2DWithRandom();
+				Size = new Value.Vector2DWithRandom();
+				Speed = new Value.Vector2DWithRandom();
+			}
+		}
+
+		public class UVFCurveParamater
+		{
+			[Name(value = "始点", language = Language.Japanese)]
+			[Name(value = "Start", language = Language.English)]
+			[IO(Export = true)]
+			public Value.FCurveVector2D Start { get; private set; }
+
+			[Name(value = "大きさ", language = Language.Japanese)]
+			[Name(value = "Size", language = Language.English)]
+			[IO(Export = true)]
+			public Value.FCurveVector2D Size { get; private set; }
+
+			public UVFCurveParamater()
+			{
+				Start = new Value.FCurveVector2D();
+				Size = new Value.FCurveVector2D();
 			}
 		}
 
@@ -358,6 +392,9 @@ namespace Effekseer.Data
 			[Name(value = "スクロール", language = Language.Japanese)]
 			[Name(value = "Scroll", language = Language.English)]
 			Scroll = 3,
+			[Name(value = "Fカーブ", language = Language.Japanese)]
+			[Name(value = "F-Curve", language = Language.English)]
+			FCurve = 4,
 		}
 
 		public enum LoopType : int

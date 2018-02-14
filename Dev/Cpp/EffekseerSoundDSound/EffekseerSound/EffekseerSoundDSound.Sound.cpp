@@ -1,4 +1,4 @@
-
+Ôªø
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
@@ -55,7 +55,7 @@ bool SoundImplemented::Initialize( IDirectSound8* dsound )
 {
 	m_dsound = dsound;
 	
-	// É{ÉCÉXÇçÏê¨
+	// „Éú„Ç§„Çπ„Çí‰ΩúÊàê
 	m_voiceContainer = new SoundVoiceContainer(this, 32);
 	
 	return true;
@@ -84,7 +84,7 @@ void SoundImplemented::SetListener( const ::Effekseer::Vector3D& pos,
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void SoundImplemented::Destory()
+void SoundImplemented::Destroy()
 {
 	delete this;
 }

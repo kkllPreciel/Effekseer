@@ -1,4 +1,4 @@
-
+﻿
 
 //----------------------------------------------------------------------------------
 //
@@ -27,6 +27,28 @@ InstanceGlobal::InstanceGlobal()
 InstanceGlobal::~InstanceGlobal()
 {
 	
+}
+
+void InstanceGlobal::SetSeed(int32_t seed)
+{
+	m_seed = seed;
+}
+
+float InstanceGlobal::GetRand()
+{
+	const int a = 1103515245;
+	const int c = 12345;
+	const int m = 2147483647;
+	
+	m_seed = (m_seed * a + c) & m;
+	auto ret = m_seed % 0x7fff;
+
+	return (float)ret / (float) (0x7fff - 1);
+}
+
+float InstanceGlobal::GetRand(float min_, float max_)
+{
+	return GetRand() * (max_ - min_) + min_;
 }
 
 //----------------------------------------------------------------------------------

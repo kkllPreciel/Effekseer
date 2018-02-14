@@ -312,6 +312,12 @@ class EffekseerNativePINVOKE {
   [global::System.Runtime.InteropServices.DllImport("Viewer", EntryPoint="CSharp_ViewerParamater_CullingZ_get")]
   public static extern float ViewerParamater_CullingZ_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
+  [global::System.Runtime.InteropServices.DllImport("Viewer", EntryPoint="CSharp_ViewerParamater_Distortion_set")]
+  public static extern void ViewerParamater_Distortion_set(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("Viewer", EntryPoint="CSharp_ViewerParamater_Distortion_get")]
+  public static extern int ViewerParamater_Distortion_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
   [global::System.Runtime.InteropServices.DllImport("Viewer", EntryPoint="CSharp_new_ViewerParamater")]
   public static extern global::System.IntPtr new_ViewerParamater();
 
@@ -335,6 +341,36 @@ class EffekseerNativePINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("Viewer", EntryPoint="CSharp_ViewerEffectBehavior_CountZ_get")]
   public static extern int ViewerEffectBehavior_CountZ_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("Viewer", EntryPoint="CSharp_ViewerEffectBehavior_TimeSpan_set")]
+  public static extern void ViewerEffectBehavior_TimeSpan_set(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("Viewer", EntryPoint="CSharp_ViewerEffectBehavior_TimeSpan_get")]
+  public static extern int ViewerEffectBehavior_TimeSpan_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("Viewer", EntryPoint="CSharp_ViewerEffectBehavior_AllColorR_set")]
+  public static extern void ViewerEffectBehavior_AllColorR_set(global::System.Runtime.InteropServices.HandleRef jarg1, byte jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("Viewer", EntryPoint="CSharp_ViewerEffectBehavior_AllColorR_get")]
+  public static extern byte ViewerEffectBehavior_AllColorR_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("Viewer", EntryPoint="CSharp_ViewerEffectBehavior_AllColorG_set")]
+  public static extern void ViewerEffectBehavior_AllColorG_set(global::System.Runtime.InteropServices.HandleRef jarg1, byte jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("Viewer", EntryPoint="CSharp_ViewerEffectBehavior_AllColorG_get")]
+  public static extern byte ViewerEffectBehavior_AllColorG_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("Viewer", EntryPoint="CSharp_ViewerEffectBehavior_AllColorB_set")]
+  public static extern void ViewerEffectBehavior_AllColorB_set(global::System.Runtime.InteropServices.HandleRef jarg1, byte jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("Viewer", EntryPoint="CSharp_ViewerEffectBehavior_AllColorB_get")]
+  public static extern byte ViewerEffectBehavior_AllColorB_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("Viewer", EntryPoint="CSharp_ViewerEffectBehavior_AllColorA_set")]
+  public static extern void ViewerEffectBehavior_AllColorA_set(global::System.Runtime.InteropServices.HandleRef jarg1, byte jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("Viewer", EntryPoint="CSharp_ViewerEffectBehavior_AllColorA_get")]
+  public static extern byte ViewerEffectBehavior_AllColorA_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("Viewer", EntryPoint="CSharp_ViewerEffectBehavior_Distance_set")]
   public static extern void ViewerEffectBehavior_Distance_set(global::System.Runtime.InteropServices.HandleRef jarg1, float jarg2);

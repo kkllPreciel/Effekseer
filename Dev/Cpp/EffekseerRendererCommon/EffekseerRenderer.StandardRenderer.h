@@ -1,4 +1,4 @@
-
+ï»¿
 #ifndef	__EFFEKSEERRENDERER_STANDARD_RENDERER_BASE_H__
 #define	__EFFEKSEERRENDERER_STANDARD_RENDERER_BASE_H__
 
@@ -31,7 +31,7 @@ struct StandardRendererState
 	::Effekseer::CullingType			CullingType;
 	::Effekseer::TextureFilterType		TextureFilterType;
 	::Effekseer::TextureWrapType		TextureWrapType;
-	void*								TexturePtr;
+	::Effekseer::TextureData*			TexturePtr;
 
 	StandardRendererState()
 	{
@@ -44,7 +44,7 @@ struct StandardRendererState
 		CullingType = ::Effekseer::CullingType::Front;
 		TextureFilterType = ::Effekseer::TextureFilterType::Nearest;
 		TextureWrapType = ::Effekseer::TextureWrapType::Repeat;
-		TexturePtr = NULL;
+		TexturePtr = nullptr;
 	}
 
 	bool operator != (const StandardRendererState state)
@@ -62,7 +62,7 @@ struct StandardRendererState
 	}
 };
 
-template<typename RENDERER, typename SHADER, typename TEXTURE, typename VERTEX, typename VERTEX_DISTORTION>
+template<typename RENDERER, typename SHADER, typename VERTEX, typename VERTEX_DISTORTION>
 class StandardRenderer
 {
 
@@ -74,7 +74,7 @@ private:
 	SHADER*		m_shader_distortion;
 	SHADER*		m_shader_no_texture_distortion;
 
-	TEXTURE*	m_texture;
+	Effekseer::TextureData*		m_texture;
 
 	StandardRendererState		m_state;
 
@@ -142,8 +142,8 @@ public:
 	{
 		Rendering();
 
-		// •K‚¸ŽŸ‚Ì•`‰æ‚Å‰Šú‰»‚³‚ê‚éB
-		m_state.TexturePtr = (void*)0x1;
+		// It is always initialized with the next drawing.
+		m_state.TexturePtr = (Effekseer::TextureData*)0x1;
 	}
 
 	void Rendering(const Effekseer::Matrix44& mCamera, const Effekseer::Matrix44& mProj)
@@ -155,7 +155,11 @@ public:
 			auto callback = m_renderer->GetDistortingCallback();
 			if (callback != nullptr)
 			{
-				callback->OnDistorting();
+				if (!callback->OnDistorting())
+				{
+					vertexCaches.clear();
+					return;
+				}
 			}
 		}
 
@@ -174,7 +178,7 @@ public:
 
 			if (m_state.Distortion)
 			{
-				// OpenGL ES‘Îô(OpenGL ES3.2ˆÈ~‚Å‚µ‚©A’¸“_ƒŒƒCƒAƒEƒg‰Â•Ï‚ÌƒŠƒ“ƒOƒoƒbƒtƒ@‚ðŽÀŒ»‚Å‚«‚È‚¢‚½‚ß)
+				// For OpenGL ES(Because OpenGL ES 3.2 and later can only realize a vertex layout variable ring buffer)
 				vb->Lock();
 				data = vb->GetBufferDirect(vertexCaches.size());
 				if (data == nullptr)
@@ -193,7 +197,7 @@ public:
 			}
 			else
 			{
-				// Œ»óA•`‰æ‚·‚éƒCƒ“ƒXƒ^ƒ“ƒX”‚ª‘½‚·‚¬‚éê‡‚Í•`‰æ‚µ‚È‚­‚µ‚Ä‚¢‚é
+				// ç¾çŠ¶ã€æç”»ã™ã‚‹ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹æ•°ãŒå¤šã™ãŽã‚‹å ´åˆã¯æç”»ã—ãªãã—ã¦ã„ã‚‹
 				vertexCaches.clear();
 				return;
 			}
@@ -206,6 +210,7 @@ public:
 		state.DepthTest = m_state.DepthTest;
 		state.DepthWrite = m_state.DepthWrite;
 		state.CullingType = m_state.CullingType;
+		state.AlphaBlend = m_state.AlphaBlend;
 
 		SHADER* shader_ = nullptr;
 
@@ -236,11 +241,11 @@ public:
 
 		m_renderer->BeginShader(shader_);
 
-		TEXTURE textures[2];
+		Effekseer::TextureData* textures[2];
 
 		if (m_state.TexturePtr != nullptr)
 		{
-			textures[0] = TexturePointerToTexture<TEXTURE>(m_state.TexturePtr);
+			textures[0] = m_state.TexturePtr;
 		}
 		else
 		{
@@ -267,7 +272,6 @@ public:
 
 		shader_->SetConstantBuffer();
 
-		state.AlphaBlend = m_state.AlphaBlend;
 		state.TextureFilterTypes[0] = m_state.TextureFilterType;
 		state.TextureWrapTypes[0] = m_state.TextureWrapType;
 

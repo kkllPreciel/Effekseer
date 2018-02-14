@@ -119,6 +119,18 @@ namespace Effekseer.Data
 			private set;
 		}
 
+		[Name(language = Language.Japanese, value = "出力時の拡大率")]
+		[Description(language = Language.Japanese, value = "出力時の拡大率")]
+		[Name(language = Language.English, value = "Output Magnification")]
+		[Description(language = Language.English, value = "Output magnification")]
+		[Undo(Undo = false)]
+		[Shown(Shown = false)]
+		public Value.Float ExternalMagnification
+		{
+			get;
+			private set;
+		}
+
 
 		[Name(language = Language.Japanese, value = "出力FPS")]
 		[Description(language = Language.Japanese, value = "出力FPS")]
@@ -153,6 +165,10 @@ namespace Effekseer.Data
 			private set;
 		}
 
+
+        // コンストラクタで初期化時、使用言語がまだ決められないので遅延初期化にする
+        Lazy<Value.PathForImage> LasyBackgroundImage;
+
 		[Name(language = Language.Japanese, value = "背景画像")]
 		[Description(language = Language.Japanese, value = "背景画像")]
 		[Name(language = Language.English, value = "Background Image")]
@@ -160,8 +176,10 @@ namespace Effekseer.Data
 		[Undo(Undo = false)]
 		public Value.PathForImage BackgroundImage
 		{
-			get;
-			private set;
+            get
+            {
+                return LasyBackgroundImage.Value;
+            }
 		}
 
 		[Name(language = Language.Japanese, value = "カラースペース")]
@@ -219,6 +237,18 @@ namespace Effekseer.Data
 			private set;
 		}
 
+		[Name(language = Language.Japanese, value = "歪み方法")]
+		[Description(language = Language.Japanese, value = "歪み方法")]
+		[Name(language = Language.English, value = "Distortion method")]
+		[Description(language = Language.English, value = "Distortion method")]
+		[Undo(Undo = false)]
+		public Value.Enum<DistortionMethodType> DistortionType
+		{
+			get;
+			private set;
+		}
+
+
         [Name(language = Language.Japanese, value = "言語設定")]
         [Description(language = Language.Japanese, value = "言語設定")]
         [Name(language = Language.English, value = "Language")]
@@ -233,7 +263,7 @@ namespace Effekseer.Data
         public OptionValues()
 		{
 			BackgroundColor = new Value.Color(0, 0, 0, 255);
-			BackgroundImage = new Value.PathForImage("画像ファイル (*.png)|*.png", false, "");
+            LasyBackgroundImage = new Lazy<Value.PathForImage>(() => { return new Value.PathForImage(Properties.Resources.ImageFilter, false, ""); });
 			GridColor = new Value.Color(255, 255, 255, 255);
 			
 			IsGridShown = new Value.Boolean(true);
@@ -246,6 +276,7 @@ namespace Effekseer.Data
 			LightColor = new Value.Color(215, 215, 215, 255);
 			LightAmbientColor = new Value.Color(40, 40, 40, 255);
 			Magnification = new Value.Float(1, float.MaxValue, 0.00001f);
+			ExternalMagnification = new Value.Float(1, float.MaxValue, 0.00001f);
 			FPS = new Value.Enum<FPSType>(FPSType._60FPS);
 			Coordinate = new Value.Enum<CoordinateType>(CoordinateType.Right);
 
@@ -256,8 +287,18 @@ namespace Effekseer.Data
 			MouseSlideInvX = new Value.Boolean(false);
 			MouseSlideInvY = new Value.Boolean(false);
 
-            GuiLanguage = new Value.Enum<Language>(Core.Language);
+			DistortionType = new Value.Enum<DistortionMethodType>(DistortionMethodType.Current);
 
+            // Switch the language according to the OS settings
+            var culture = System.Globalization.CultureInfo.CurrentCulture;
+            if (culture.Name == "ja-JP")
+            {
+                GuiLanguage = new Value.Enum<Language>(Language.Japanese);
+            }
+            else
+            {
+                GuiLanguage = new Value.Enum<Language>(Language.English);
+            }
 		}
 
 		public enum FPSType : int
@@ -285,6 +326,20 @@ namespace Effekseer.Data
 			[Name(value = "Left-Handed", language = Language.English)]
 			Left = 1,
 		}
+
+		public enum DistortionMethodType : int
+		{
+			[Name(value = "現行", language = Language.Japanese)]
+			[Name(value = "Current", language = Language.English)]
+			Current = 0,
+			[Name(value = "1.20互換", language = Language.Japanese)]
+			[Name(value = "1.20 Compatible", language = Language.English)]
+			Effekseer120 = 1,
+			[Name(value = "無効", language = Language.Japanese)]
+			[Name(value = "Disabled", language = Language.English)]
+			Disabled = 2,
+		}
+
 
 		public enum ColorSpaceType : int
 		{

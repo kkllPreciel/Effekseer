@@ -17,15 +17,29 @@ namespace Effekseer.GUI
 
 			nodeTreeView.Renew();
 
-			if (Core.Language == Language.English)
+			// Add icon for each nodes
+			imageList1.Images.Add(Properties.Resources.NodeEmpty);
+			imageList1.Images.Add(Properties.Resources.NodeEmpty);	// Dummy
+			imageList1.Images.Add(Properties.Resources.NodeSprite);
+			imageList1.Images.Add(Properties.Resources.NodeRibbon);
+			imageList1.Images.Add(Properties.Resources.NodeRing);
+			imageList1.Images.Add(Properties.Resources.NodeModel);
+			imageList1.Images.Add(Properties.Resources.NodeTrack);
+
+            Icon = Icon.FromHandle(((Bitmap)Properties.Resources.IconNodeTree).GetHicon());
+        }
+
+		internal Component.NodeTreeView NodeTreeView
+		{
+			get
 			{
-				Text = "Node Tree";
+				return nodeTreeView;
 			}
 		}
 
 		private void DockNodeTreeView_Load(object sender, EventArgs e)
 		{
-			Func<Action, ToolStripMenuItem> create_menu_item_from_commands = (a) =>
+			Func<Func<bool>, ToolStripMenuItem> create_menu_item_from_commands = (a) =>
 			{
 				var item = new ToolStripMenuItem();
 				var attributes = a.Method.GetCustomAttributes(false);

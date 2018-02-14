@@ -1,4 +1,4 @@
-
+ï»¿
 
 //----------------------------------------------------------------------------------
 //
@@ -107,7 +107,11 @@ Effect* EffectImplemented::Create( Manager* pManager, void* pData, int size, flo
 	if( pData == NULL || size == 0 ) return NULL;
 
 	EffectImplemented* effect = new EffectImplemented( pManager, pData, size );
-	effect->Load( pData, size, magnification, materialPath );
+	if ( !effect->Load( pData, size, magnification, materialPath ) )
+	{
+		effect->Release();
+		effect = NULL;
+	}
 	return effect;
 }
 
@@ -156,7 +160,11 @@ Effect* EffectImplemented::Create( Setting* setting, void* pData, int size, floa
 	if( pData == NULL || size == 0 ) return NULL;
 
 	EffectImplemented* effect = new EffectImplemented( setting, pData, size );
-	effect->Load( pData, size, magnification, materialPath );
+	if ( !effect->Load( pData, size, magnification, materialPath ) )
+	{
+		effect->Release();
+		effect = NULL;
+	}
 	return effect;
 }
 
@@ -179,6 +187,12 @@ EffectImplemented::EffectImplemented( Manager* pManager, void* pData, int size )
 	, m_ImageCount		( 0 )
 	, m_ImagePaths		( NULL )
 	, m_pImages			( NULL )
+	, m_normalImageCount(0)
+	, m_normalImagePaths(nullptr)
+	, m_normalImages(nullptr)
+	, m_distortionImageCount(0)
+	, m_distortionImagePaths(nullptr)
+	, m_distortionImages(nullptr)
 	, m_WaveCount		( 0 )
 	, m_WavePaths		( NULL )
 	, m_pWaves			( NULL )
@@ -187,15 +201,8 @@ EffectImplemented::EffectImplemented( Manager* pManager, void* pData, int size )
 	, m_pModels			( NULL )
 	, m_maginification	( 1.0f )
 	, m_maginificationExternal	( 1.0f )
+	, m_defaultRandomSeed	(-1)
 	, m_pRoot			( NULL )
-
-	, m_normalImageCount(0)
-	, m_normalImagePaths(nullptr)
-	, m_normalImages(nullptr)
-
-	, m_distortionImageCount(0)
-	, m_distortionImagePaths(nullptr)
-	, m_distortionImages(nullptr)
 
 {
 	ES_SAFE_ADDREF( m_pManager );
@@ -267,7 +274,7 @@ float EffectImplemented::GetMaginification() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* materialPath )
+bool EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* materialPath )
 {
 	EffekseerPrintDebug("** Create : Effect\n");
 
@@ -276,20 +283,20 @@ void EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* 
 	// EFKS
 	int head = 0;
 	memcpy( &head, pos, sizeof(int) );
-	if( memcmp( &head, "SKFE", 4 ) != 0 ) return;
+	if( memcmp( &head, "SKFE", 4 ) != 0 ) return false;
 	pos += sizeof( int );
 
 	memcpy( &m_version, pos, sizeof(int) );
 	pos += sizeof(int);
 
-	// ‰æ‘œ
+	// ç”»åƒ
 	memcpy( &m_ImageCount, pos, sizeof(int) );
 	pos += sizeof(int);
 
 	if( m_ImageCount > 0 )
 	{
 		m_ImagePaths = new EFK_CHAR*[ m_ImageCount ];
-		m_pImages = new void*[ m_ImageCount ];
+		m_pImages = new TextureData*[ m_ImageCount ];
 
 		for( int i = 0; i < m_ImageCount; i++ )
 		{
@@ -307,14 +314,14 @@ void EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* 
 
 	if (m_version >= 9)
 	{
-		// ‰æ‘œ
+		// ç”»åƒ
 		memcpy(&m_normalImageCount, pos, sizeof(int));
 		pos += sizeof(int);
 
 		if (m_normalImageCount > 0)
 		{
 			m_normalImagePaths = new EFK_CHAR*[m_normalImageCount];
-			m_normalImages = new void*[m_normalImageCount];
+			m_normalImages = new TextureData*[m_normalImageCount];
 
 			for (int i = 0; i < m_normalImageCount; i++)
 			{
@@ -330,14 +337,14 @@ void EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* 
 			}
 		}
 
-		// ‰æ‘œ
+		// ç”»åƒ
 		memcpy(&m_distortionImageCount, pos, sizeof(int));
 		pos += sizeof(int);
 
 		if (m_distortionImageCount > 0)
 		{
 			m_distortionImagePaths = new EFK_CHAR*[m_distortionImageCount];
-			m_distortionImages = new void*[m_distortionImageCount];
+			m_distortionImages = new TextureData*[m_distortionImageCount];
 
 			for (int i = 0; i < m_distortionImageCount; i++)
 			{
@@ -356,7 +363,7 @@ void EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* 
 
 	if( m_version >= 1 )
 	{
-		// ƒEƒF[ƒu
+		// ã‚¦ã‚§ãƒ¼ãƒ–
 		memcpy( &m_WaveCount, pos, sizeof(int) );
 		pos += sizeof(int);
 
@@ -382,7 +389,7 @@ void EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* 
 
 	if( m_version >= 6 )
 	{
-		/* ƒ‚ƒfƒ‹ */
+		/* ãƒ¢ãƒ‡ãƒ« */
 		memcpy( &m_modelCount, pos, sizeof(int) );
 		pos += sizeof(int);
 
@@ -406,16 +413,27 @@ void EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* 
 		}
 	}
 
-	// Šg‘å—¦
+	// æ‹¡å¤§çŽ‡
 	if( m_version >= 2 )
 	{
 		memcpy( &m_maginification, pos, sizeof(float) );
 		pos += sizeof(float);
-		m_maginification *= mag;
-		m_maginificationExternal = mag;
 	}
 
-	// ƒJƒŠƒ“ƒO
+	m_maginification *= mag;
+	m_maginificationExternal = mag;
+
+	if (m_version >= 11)
+	{
+		memcpy(&m_defaultRandomSeed, pos, sizeof(int32_t));
+		pos += sizeof(int32_t);
+	}
+	else
+	{
+		m_defaultRandomSeed = -1;
+	}
+
+	// ã‚«ãƒªãƒ³ã‚°
 	if( m_version >= 9 )
 	{
 		memcpy( &(Culling.Shape), pos, sizeof(int32_t) );
@@ -434,13 +452,14 @@ void EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* 
 		}
 	}
 
-	// ƒm[ƒh
-	m_pRoot = EffectNode::Create( this, NULL, pos );
+	// ãƒŽãƒ¼ãƒ‰
+	m_pRoot = EffectNodeImplemented::Create( this, NULL, pos );
 
-	// ƒŠƒ[ƒh—p‚ÉmaterialPath‚ð‹L˜^‚µ‚Ä‚¨‚­
+	// ãƒªãƒ­ãƒ¼ãƒ‰ç”¨ã«materialPathã‚’è¨˜éŒ²ã—ã¦ãŠã
     if (materialPath) m_materialPath = materialPath;
 
 	ReloadResources( materialPath );
+	return true;
 }
 
 //----------------------------------------------------------------------------------
@@ -509,27 +528,9 @@ void EffectImplemented::Reset()
 	ES_SAFE_DELETE( m_pRoot );
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-int EffectImplemented::AddRef()
+bool EffectImplemented::IsDyanamicMagnificationValid() const
 {
-	m_reference++;
-	return m_reference;
-}
-
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-int EffectImplemented::Release()
-{
-	m_reference--;
-	int count = m_reference;
-	if ( count == 0 )
-	{
-		delete this;
-	}
-	return count;
+	return GetVersion() >= 8 || GetVersion() < 2;
 }
 
 //----------------------------------------------------------------------------------
@@ -560,14 +561,19 @@ int EffectImplemented::GetVersion() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void* EffectImplemented::GetColorImage( int n ) const
+TextureData* EffectImplemented::GetColorImage( int n ) const
 {
 	return m_pImages[ n ];
 }
 
-void* EffectImplemented::GetNormalImage(int n) const
+int32_t EffectImplemented::GetColorImageCount() const
 {
-	/* ‹­§“I‚ÉŒÝŠ·‚ð‚Æ‚é */
+	return m_ImageCount;
+}
+
+TextureData* EffectImplemented::GetNormalImage(int n) const
+{
+	/* å¼·åˆ¶çš„ã«äº’æ›ã‚’ã¨ã‚‹ */
 	if (this->m_version <= 8)
 	{
 		return m_pImages[n];
@@ -576,15 +582,25 @@ void* EffectImplemented::GetNormalImage(int n) const
 	return m_normalImages[n];
 }
 
-void* EffectImplemented::GetDistortionImage(int n) const
+int32_t EffectImplemented::GetNormalImageCount() const
 {
-	/* ‹­§“I‚ÉŒÝŠ·‚ð‚Æ‚é */
+	return m_normalImageCount;
+}
+
+TextureData* EffectImplemented::GetDistortionImage(int n) const
+{
+	/* å¼·åˆ¶çš„ã«äº’æ›ã‚’ã¨ã‚‹ */
 	if (this->m_version <= 8)
 	{
 		return m_pImages[n];
 	}
 
 	return m_distortionImages[n];
+}
+
+int32_t EffectImplemented::GetDistortionImageCount() const
+{
+	return m_distortionImageCount;
 }
 
 //----------------------------------------------------------------------------------
@@ -595,6 +611,11 @@ void* EffectImplemented::GetWave( int n ) const
 	return m_pWaves[ n ];
 }
 
+int32_t EffectImplemented::GetWaveCount() const
+{
+	return m_WaveCount;
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -603,6 +624,10 @@ void* EffectImplemented::GetModel( int n ) const
 	return m_pModels[ n ];
 }
 
+int32_t EffectImplemented::GetModelCount() const
+{
+	return m_modelCount;
+}
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------

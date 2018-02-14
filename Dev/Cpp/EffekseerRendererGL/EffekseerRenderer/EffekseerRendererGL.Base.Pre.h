@@ -1,4 +1,4 @@
-
+﻿
 #ifndef	__EFFEKSEERRENDERER_GL_BASE_PRE_H__
 #define	__EFFEKSEERRENDERER_GL_BASE_PRE_H__
 
@@ -44,6 +44,14 @@
 #include <GLES3/gl3.h>
 #endif
 
+#elif defined(__EFFEKSEER_RENDERER_GL2__)
+
+#if defined(__APPLE__)
+#include <OpenGL/gl.h>
+#else
+#include <GL/gl.h>
+#endif
+
 #else
 
 #if defined(__APPLE__)
@@ -56,6 +64,7 @@
 
 #if _WIN32
 #pragma comment(lib, "gdiplus.lib")
+#pragma comment(lib, "opengl32.lib")
 #endif
 
 //----------------------------------------------------------------------------------
@@ -67,6 +76,15 @@ namespace EffekseerRendererGL
 //
 //----------------------------------------------------------------------------------
 class Renderer;
+
+enum class OpenGLDeviceType
+{
+	OpenGL2,
+	OpenGL3,
+	OpenGLES2,
+	OpenGLES3,
+	Emscripten,
+};
 
 //----------------------------------------------------------------------------------
 //

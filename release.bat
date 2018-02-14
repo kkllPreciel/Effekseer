@@ -1,6 +1,5 @@
-SET RDIR=Effekseer120
-SET RDIR_R=EffekseerRuntime120
-SET RDIR_U=EffekseerForUnity120
+SET RDIR=Effekseer132
+SET RDIR_R=EffekseerRuntime130
 
 rmdir %RDIR%
 mkdir %RDIR%
@@ -8,12 +7,13 @@ mkdir %RDIR%
 rmdir %RDIR_R%
 mkdir %RDIR_R%
 
-rmdir %RDIR_U%
-mkdir %RDIR_U%
+echo Compile Editor
+"C:\Program Files (x86)\MSBuild\14.0\Bin\msbuild" Dev\Editor\Effekseer.sln /p:configuration=Release
 
+echo Copy application
 
-echo アプリケーションコピー
 mkdir %RDIR%\Tool
+
 copy Dev\release\Effekseer.exe %RDIR%\Tool\.
 copy Dev\release\Effekseer.exe.config %RDIR%\Tool\.
 copy Dev\release\EffekseerCore.dll %RDIR%\Tool\.
@@ -33,7 +33,15 @@ mkdir %RDIR%\Tool\scripts
 mkdir %RDIR%\Tool\scripts\export
 copy Dev\release\scripts\export\Default.cs %RDIR%\Tool\scripts\export\.
 
-echo ランタイムコピー
+mkdir %RDIR%\Tool\en-US
+copy Dev\release\en-US\Effekseer.resources.dll %RDIR%\Tool\en-US\.
+copy Dev\release\en-US\EffekseerCore.resources.dll %RDIR%\Tool\en-US\.
+
+mkdir %RDIR%\Tool\tools
+copy Dev\release\tools\fbxToEffekseerModelConverter.exe %RDIR%\Tool\tools\.
+copy Dev\release\tools\mqoToEffekseerModelConverter.exe %RDIR%\Tool\tools\.
+
+echo Copy runtime
 mkdir %RDIR_R%\RuntimeSample\
 mkdir %RDIR_R%\RuntimeSample\lib
 mkdir %RDIR_R%\RuntimeSample\include
@@ -113,44 +121,30 @@ robocopy Release\Sample %RDIR%\Sample *.efkproj *.efkmodel *.txt *.png /mir /S
 
 echo ライセンス
 cp Release/LICENSE.txt %RDIR_R%/LICENSE.txt
-cp Release/LICENSE.txt %RDIR_U%/LICENSE.txt
 
 echo Readme
 copy readme_tool.txt %RDIR%\readme.txt
 copy readme_runtime.txt %RDIR_R%\readme.txt
-copy readme_unity.txt %RDIR_U%\readme.txt
 
 echo ヘルプ
-mkdir %RDIR%\Help_Jp
-mkdir %RDIR%\QuickTutorial_En
+mkdir %RDIR%\Help
+mkdir %RDIR%\QuickTutorial
 
-robocopy Release\Help_Tool %RDIR%\Help_Jp *.html *.css *.efkproj *.png /mir /S
-robocopy Document\QuickTutorial_Tool %RDIR%\QuickTutorial_En *.html *.css *.efkproj *.png /mir /S
+robocopy docs\Help_Tool %RDIR%\Help *.html *.css *.efkproj *.png /mir /S
+robocopy docs\QuickTutorial_Tool %RDIR%\QuickTutorial *.html *.css *.efkproj *.png /mir /S
 
 mkdir %RDIR_R%\Help
-robocopy Release\Help_Runtime %RDIR_R%\Help *.html *.css *.efkproj *.png /mir /S
+robocopy docs\Help_Runtime %RDIR_R%\Help *.html *.css *.efkproj *.png /mir /S
 
-mkdir %RDIR_U%\Help
-robocopy Release\Help_Unity %RDIR_U%\Help *.html *.css *.efkproj *.png /mir /S
+echo doxygen(exe or bat)
+call doxygen.bat doxygen.template
+call doxygen.exe doxygen.template
 
-echo ツール
-mkdir %RDIR%\Tool
-copy Release\Tool\mqoToEffekseerModelConverter.exe %RDIR%\Tool\.
-
-echo Unity
-mkdir %RDIR_U%\GameEngine
-robocopy Release\GameEngine %RDIR_U%\GameEngine *.unitypackage *.zip /mir /S
-
-echo doxygen
-doxygen doxygen.template
 mkdir %RDIR_R%\Help\html\doxygen
 robocopy html %RDIR_R%\Help\html\doxygen /mir /S
 
-doxygen Release\Help_Unity\Doxyfile
-robocopy UnityAPIRef %RDIR_U%\Help\APIRef /mir /S
-
 echo Readme2
-copy Document\readme_sample.txt %RDIR%\Sample\readme.txt
+copy docs\readme_sample.txt %RDIR%\Sample\readme.txt
 
 echo VS
 

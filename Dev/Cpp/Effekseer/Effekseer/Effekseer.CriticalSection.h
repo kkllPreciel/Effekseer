@@ -1,4 +1,4 @@
-
+ï»¿
 #ifndef	__EFFEKSEER_CRITICALSESSION_H__
 #define	__EFFEKSEER_CRITICALSESSION_H__
 
@@ -6,14 +6,6 @@
 // Include
 //----------------------------------------------------------------------------------
 #include "Effekseer.Base.h"
-
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <unistd.h>
-#include <pthread.h>
-#include <sys/time.h>
-#endif
 
 //----------------------------------------------------------------------------------
 //
@@ -24,13 +16,15 @@ namespace Effekseer
 //
 //----------------------------------------------------------------------------------
 /**
-	@brief	ƒNƒŠƒeƒBƒJƒ‹ƒZƒNƒVƒ‡ƒ“
+	@brief	ã‚¯ãƒªãƒ†ã‚£ã‚«ãƒ«ã‚»ã‚¯ã‚·ãƒ§ãƒ³
 */
 class CriticalSection
 {
 private:
 #ifdef _WIN32
 	mutable CRITICAL_SECTION m_criticalSection;
+#elif defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE)
+	mutable CONSOLE_GAME_MUTEX	m_mutex;
 #else
 	mutable pthread_mutex_t m_mutex;
 #endif

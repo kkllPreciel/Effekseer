@@ -1,4 +1,4 @@
-
+ï»¿
 #ifndef	__EFFEKSEERTOOL_RENDERER_H__
 #define	__EFFEKSEERTOOL_RENDERER_H__
 
@@ -6,6 +6,8 @@
 // Include
 //----------------------------------------------------------------------------------
 #include "EffekseerTool.Base.h"
+
+#include <functional>
 
 //----------------------------------------------------------------------------------
 //
@@ -27,7 +29,10 @@ private:
 		DistortingCallback(Renderer* renderer);
 		virtual ~DistortingCallback();
 
-		void OnDistorting();
+		bool OnDistorting();
+
+		bool IsEnabled;
+		bool Blit;
 	};
 
 private:
@@ -42,6 +47,7 @@ private:
 	eProjectionType		m_projection;
 
 	::EffekseerRendererDX9::RendererImplemented*	m_renderer;
+	DistortingCallback*								m_distortionCallback;
 
 	::EffekseerRenderer::Grid*	m_grid;
 	::EffekseerRenderer::Guide*	m_guide;
@@ -59,7 +65,8 @@ private:
 	IDirect3DSurface9*	m_recordingTempTarget;
 	IDirect3DSurface9*	m_recordingTempDepth;
 
-	IDirect3DTexture9*	m_backGroundTexture;
+	IDirect3DTexture9*		m_backGroundTexture;
+	std::vector<uint8_t>	m_backGroundTextureBuffer;
 
 	IDirect3DSurface9*	m_renderTarget = nullptr;
 	IDirect3DTexture9*	m_renderTargetTexture = nullptr;
@@ -77,49 +84,52 @@ private:
 	bool				m_isSRGBMode = false;
 
 	void GenerateRenderTargets(int32_t width, int32_t height);
+
+	void LoadBackgroundImageInternal(void* data, int32_t size);
+
 public:
 	/**
-		@brief	ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+		@brief	ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	*/
 	Renderer(int32_t squareMaxCount, bool isSRGBMode);
 
 	/**
-		@brief	ƒfƒXƒgƒ‰ƒNƒ^
+		@brief	ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	*/
 	~Renderer();
 
 	/**
-		@brief	‰Šú‰»‚ğs‚¤B
+		@brief	åˆæœŸåŒ–ã‚’è¡Œã†ã€‚
 	*/
 	bool Initialize( HWND handle, int width, int height );
 
 	/**
-		@brief	ƒfƒoƒCƒX‚ğæ“¾‚·‚éB
+		@brief	ãƒ‡ãƒã‚¤ã‚¹ã‚’å–å¾—ã™ã‚‹ã€‚
 	*/
 	LPDIRECT3DDEVICE9 GetDevice();
 
 	/**
-		@brief	‰æ–Ê‚É•\¦‚·‚éB
+		@brief	ç”»é¢ã«è¡¨ç¤ºã™ã‚‹ã€‚
 	*/
 	bool Present();
 
 	/**
-		@brief	ƒfƒoƒCƒX‚ÌƒŠƒZƒbƒg
+		@brief	ãƒ‡ãƒã‚¤ã‚¹ã®ãƒªã‚»ãƒƒãƒˆ
 	*/
 	void ResetDevice();
 
 	/**
-		@brief	Ë‰eæ“¾
+		@brief	å°„å½±å–å¾—
 	*/
 	eProjectionType GetProjectionType();
 
 	/**
-		@brief	Ë‰eİ’è
+		@brief	å°„å½±è¨­å®š
 	*/
 	void SetProjectionType( eProjectionType type );
 
 	/**
-		@brief	‰æ–ÊƒTƒCƒY•ÏX
+		@brief	ç”»é¢ã‚µã‚¤ã‚ºå¤‰æ›´
 	*/
 	bool Resize( int width, int height );
 
@@ -128,62 +138,62 @@ public:
 	::EffekseerRenderer::Renderer*	GetRenderer() { return m_renderer; };
 
 	/**
-		@brief	Ë‰es—ñİ’è
+		@brief	å°„å½±è¡Œåˆ—è¨­å®š
 	*/
 	void SetPerspectiveFov( int width, int height );
 
 	/**
-		@brief	Ë‰es—ñİ’è
+		@brief	å°„å½±è¡Œåˆ—è¨­å®š
 	*/
 	void SetOrthographic( int width, int height );
 
 	/**
-		@brief	Orthographic•\¦‚ÌŠg‘å—¦
+		@brief	Orthographicè¡¨ç¤ºã®æ‹¡å¤§ç‡
 	*/
 	float	RateOfMagnification;
 
 	/**
-		@brief	ƒKƒCƒh‚Ìc•
+		@brief	ã‚¬ã‚¤ãƒ‰ã®ç¸¦å¹…
 	*/
 	int32_t GuideWidth;
 
 	/**
-		@brief	ƒKƒCƒh‚Ì‰¡•
+		@brief	ã‚¬ã‚¤ãƒ‰ã®æ¨ªå¹…
 	*/
 	int32_t	GuideHeight;
 
 	/**
-		@brief	ƒKƒCƒh‚ğ•`‰æ‚·‚é‚©‚Ç‚¤‚©
+		@brief	ã‚¬ã‚¤ãƒ‰ã‚’æç”»ã™ã‚‹ã‹ã©ã†ã‹
 	*/
 	bool RendersGuide;
 
 	/**
-		@brief	ƒOƒŠƒbƒh‚ğ•\¦‚·‚é‚©?
+		@brief	ã‚°ãƒªãƒƒãƒ‰ã‚’è¡¨ç¤ºã™ã‚‹ã‹?
 	*/
 	bool IsGridShown;
 
 	/**
-		@brief	XYƒOƒŠƒbƒh‚ğ•\¦‚·‚é‚©?
+		@brief	XYã‚°ãƒªãƒƒãƒ‰ã‚’è¡¨ç¤ºã™ã‚‹ã‹?
 	*/
 	bool IsGridXYShown;
 
 	/**
-		@brief	XZƒOƒŠƒbƒh‚ğ•\¦‚·‚é‚©?
+		@brief	XZã‚°ãƒªãƒƒãƒ‰ã‚’è¡¨ç¤ºã™ã‚‹ã‹?
 	*/
 	bool IsGridXZShown;
 
 	/**
-		@brief	YZƒOƒŠƒbƒh‚ğ•\¦‚·‚é‚©?
+		@brief	YZã‚°ãƒªãƒƒãƒ‰ã‚’è¡¨ç¤ºã™ã‚‹ã‹?
 	*/
 	bool IsGridYZShown;
 
 	/**
-		@brief	‰EèŒn‚©?
+		@brief	å³æ‰‹ç³»ã‹?
 	*/
 	bool IsRightHand;
 
 	/**
-		@brief	ƒOƒŠƒbƒh‚Ì’·‚³
+		@brief	ã‚°ãƒªãƒƒãƒ‰ã®é•·ã•
 	*/
 	float GridLength;
 
@@ -194,49 +204,65 @@ public:
 	Effekseer::Vector3D CullingPosition;
 
 	/**
-		@brief	”wŒiF
+		@brief	The type of distortion
+	*/
+	eDistortionType		Distortion;
+
+	/**
+		@brief	èƒŒæ™¯è‰²
 	*/
 	Effekseer::Color GridColor;
 
 	/**
-		@brief	”wŒiF
+		@brief	èƒŒæ™¯è‰²
 	*/
 	Effekseer::Color BackgroundColor;
 
 	/**
-		@brief	”wŒi‚ª”¼“§–¾‚©?
+		@brief	èƒŒæ™¯ãŒåŠé€æ˜ã‹?
 	*/
 	bool IsBackgroundTranslucent;
 
 	/**
-		@brief	•`‰æŠJn
+		@brief	æç”»é–‹å§‹
 	*/
 	bool BeginRendering();
 
 	/**
-		@brief	•`‰æI—¹
+		@brief	æç”»çµ‚äº†
 	*/
 	bool EndRendering();
 
 	/**
-		@brief	•`‰æ’†‚Ì”wŒi‚ğƒeƒNƒXƒ`ƒƒ‚Æ‚µ‚Ä”wŒi‚ğo—Í‚·‚éB
+		@brief	æç”»ä¸­ã®èƒŒæ™¯ã‚’ãƒ†ã‚¯ã‚¹ãƒãƒ£ã¨ã—ã¦èƒŒæ™¯ã‚’å‡ºåŠ›ã™ã‚‹ã€‚
 	*/
 	IDirect3DTexture9* ExportBackground();
 
 	/**
-		@brief	˜^‰æŠJn
+		@brief	éŒ²ç”»é–‹å§‹
 	*/
 	bool BeginRecord( int32_t width, int32_t height );
 
 	/**
-	@brief	˜^‰æI—¹
+	@brief	éŒ²ç”»çµ‚äº†
 	*/
 	void EndRecord(std::vector<Effekseer::Color>& pixels, bool generateAlpha, bool removeAlpha);
 
 	/**
-		@brief	”wŒi‚Ì“Ç‚İ‚İ
+		@brief	èƒŒæ™¯ã®èª­ã¿è¾¼ã¿
 	*/
 	void LoadBackgroundImage( void* data, int32_t size );
+
+	/**
+		Called when device is losted.
+	*/
+	std::function<void()>	LostedDevice;
+
+	/**
+	Called when device is resetted.
+	*/
+	std::function<void()>	ResettedDevice;
+
 };
 
 //----------------------------------------------------------------------------------

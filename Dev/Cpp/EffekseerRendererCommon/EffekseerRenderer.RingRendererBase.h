@@ -1,4 +1,4 @@
-
+ï»¿
 #ifndef	__EFFEKSEERRENDERER_RING_RENDERER_BASE_H__
 #define	__EFFEKSEERRENDERER_RING_RENDERER_BASE_H__
 
@@ -28,10 +28,12 @@ typedef ::Effekseer::RingRenderer::NodeParameter efkRingNodeParam;
 typedef ::Effekseer::RingRenderer::InstanceParameter efkRingInstanceParam;
 typedef ::Effekseer::Vector3D efkVector3D;
 
+template<typename RENDERER, typename VERTEX_NORMAL, typename VERTEX_DISTORTION>
 class RingRendererBase
 	: public ::Effekseer::RingRenderer
 {
 protected:
+	RENDERER*						m_renderer;
 	int32_t							m_ringBufferOffset;
 	uint8_t*						m_ringBufferData;
 
@@ -39,15 +41,23 @@ protected:
 	int32_t							m_instanceCount;
 	::Effekseer::Matrix44			m_singleRenderingMatrix;
 
-	RingRendererBase();
 public:
 
-	virtual ~RingRendererBase();
+	RingRendererBase(RENDERER* renderer)
+		: m_renderer(renderer)
+		, m_ringBufferOffset(0)
+		, m_ringBufferData(NULL)
+		, m_spriteCount(0)
+		, m_instanceCount(0)
+	{
+	}
 
+	virtual ~RingRendererBase()
+	{
+	}
 
 protected:
 
-	template<typename RENDERER, typename VERTEX>
 	void BeginRendering_(RENDERER* renderer, int32_t count, const efkRingNodeParam& param)
 	{
 		m_spriteCount = 0;
@@ -90,20 +100,19 @@ protected:
 		renderer->GetStandardRenderer()->BeginRenderingAndRenderingIfRequired(count * vertexCount, m_ringBufferOffset, (void*&) m_ringBufferData);
 	}
 
-	template<typename VERTEX, typename VERTEX_DISTORTION>
 	void Rendering_(const efkRingNodeParam& parameter, const efkRingInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera)
 	{
 		if (parameter.Distortion)
 		{
-			Rendering_Internal<VERTEX_DISTORTION, VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
 		}
 		else
 		{
-			Rendering_Internal<VERTEX, VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<VERTEX_NORMAL>(parameter, instanceParameter, userData, camera);
 		}
 	}
 
-	template<typename VERTEX, typename VERTEX_DISTORTION>
+	template<typename VERTEX>
 	void Rendering_Internal( const efkRingNodeParam& parameter, const efkRingInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera )
 	{
 		int32_t vertexCount = parameter.VertexCount * 8;
@@ -201,14 +210,14 @@ protected:
 			v[7].UV[0] = texNext;
 			v[7].UV[1] = v3;
 
-			// ˜c‚Ýˆ—
+			// æ­ªã¿å‡¦ç†
 			if (sizeof(VERTEX) == sizeof(VERTEX_DISTORTION))
 			{
 				auto vs = (VERTEX_DISTORTION*) &verteies[i];
 				auto binormalCurrent = v[5].Pos - v[0].Pos;
 				auto binormalNext = v[7].Pos - v[2].Pos;
 
-				// –ß‚·
+				// æˆ»ã™
 				float t_b;
 				t_b = old_c * (stepC) - old_s * (-stepS);
 				auto s_b = old_s * (stepC) + old_c * (-stepS);
@@ -219,7 +228,7 @@ protected:
 				outerBefore.Y = s_b * outerRadius;
 				outerBefore.Z = outerHeight;
 
-				// ŽŸ
+				// æ¬¡
 				auto t_n = c * stepC - s * stepS;
 				auto s_n = s * stepC + c * stepS;
 				auto c_n = t_n;
@@ -347,6 +356,8 @@ protected:
 			mat_rot.Value[3][0] = t.X;
 			mat_rot.Value[3][1] = t.Y;
 			mat_rot.Value[3][2] = t.Z;
+
+			ApplyDepthOffset(mat_rot, camera, s, parameter.DepthOffset, parameter.IsDepthOffsetScaledWithCamera, parameter.IsDepthOffsetScaledWithParticleScale, parameter.IsRightHand);
 			
 			if( m_instanceCount > 1 )
 			{
@@ -372,17 +383,21 @@ protected:
 		}
 		else if( parameter.Billboard == ::Effekseer::BillboardType::Fixed )
 		{
+			auto mat = instanceParameter.SRTMatrix43;
+
+			ApplyDepthOffset(mat, camera, parameter.DepthOffset, parameter.IsDepthOffsetScaledWithCamera, parameter.IsDepthOffsetScaledWithParticleScale, parameter.IsRightHand);
+
 			if( m_instanceCount > 1 )
 			{
-				TransformVertexes( verteies, vertexCount, instanceParameter.SRTMatrix43 );
+				TransformVertexes(verteies, vertexCount, mat);
 			}
 			else
 			{
 				for( int32_t i = 0; i < 4; i++ )
 				{
-					m_singleRenderingMatrix.Values[i][0] = instanceParameter.SRTMatrix43.Value[i][0];
-					m_singleRenderingMatrix.Values[i][1] = instanceParameter.SRTMatrix43.Value[i][1];
-					m_singleRenderingMatrix.Values[i][2] = instanceParameter.SRTMatrix43.Value[i][2];
+					m_singleRenderingMatrix.Values[i][0] = mat.Value[i][0];
+					m_singleRenderingMatrix.Values[i][1] = mat.Value[i][1];
+					m_singleRenderingMatrix.Values[i][2] = mat.Value[i][2];
 				}
 			}
 		}
@@ -390,16 +405,37 @@ protected:
 		m_spriteCount += 2 * parameter.VertexCount;
 	}
 
-	template<typename RENDERER, typename SHADER, typename TEXTURE, typename VERTEX>
 	void EndRendering_(RENDERER* renderer, const efkRingNodeParam& param)
 	{
 		if (m_instanceCount == 1)
 		{
+
 			::Effekseer::Matrix44 mat;
 			::Effekseer::Matrix44::Mul(mat, m_singleRenderingMatrix, renderer->GetCameraMatrix());
 
 			renderer->GetStandardRenderer()->Rendering(mat, renderer->GetProjectionMatrix());
 		}
+	}
+
+public:
+	void BeginRendering(const efkRingNodeParam& parameter, int32_t count, void* userData)
+	{
+		BeginRendering_(m_renderer, count, parameter);
+	}
+
+	void Rendering(const efkRingNodeParam& parameter, const efkRingInstanceParam& instanceParameter, void* userData)
+	{
+		if (m_spriteCount == m_renderer->GetSquareMaxCount()) return;
+		Rendering_(parameter, instanceParameter, userData, m_renderer->GetCameraMatrix());
+	}
+
+	void EndRendering(const efkRingNodeParam& parameter, void* userData)
+	{
+		if (m_ringBufferData == NULL) return;
+
+		if (m_spriteCount == 0) return;
+
+		EndRendering_(m_renderer, parameter);
 	}
 };
 //----------------------------------------------------------------------------------

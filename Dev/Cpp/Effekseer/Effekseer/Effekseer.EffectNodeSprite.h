@@ -1,4 +1,4 @@
-
+﻿
 #ifndef	__EFFEKSEER_ParameterNODE_SPRITE_H__
 #define	__EFFEKSEER_ParameterNODE_SPRITE_H__
 
@@ -70,7 +70,7 @@ struct SpritePositionParameter
 //
 //----------------------------------------------------------------------------------
 class EffectNodeSprite
-	: public EffectNode
+	: public EffectNodeImplemented
 {
 	friend class Manager;
 	friend class Effect;
@@ -80,19 +80,21 @@ public:
 
 	struct InstanceValues
 	{
-		// �F
+		// 色
 		color _color;
 
+		color _originalColor;
+		
 		union 
 		{
 			struct
 			{
-			
+				color _color;
 			} fixed;
 
 			struct
 			{
-
+				color _color;
 			} random;
 
 			struct
@@ -133,7 +135,7 @@ public:
 	int SpriteTexture;
 
 	EffectNodeSprite( Effect* effect, unsigned char*& pos )
-		: EffectNode( effect, pos )
+		: EffectNodeImplemented(effect, pos)
 	{
 	}
 

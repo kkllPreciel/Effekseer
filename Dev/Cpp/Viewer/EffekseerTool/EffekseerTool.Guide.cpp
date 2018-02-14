@@ -1,4 +1,4 @@
-
+ï»¿
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ Guide* Guide::Create( EffekseerRendererDX9::RendererImplemented* renderer )
 	assert( renderer != NULL );
 	assert( renderer->GetDevice() != NULL );
 
-	// À•W(2)
+	// åº§æ¨™(2)
 	D3DVERTEXELEMENT9 decl[] =
 	{
 		{0,	0,	D3DDECLTYPE_FLOAT2,	D3DDECLMETHOD_DEFAULT,	D3DDECLUSAGE_POSITION,	0},
@@ -63,6 +63,22 @@ Guide* Guide::Create( EffekseerRendererDX9::RendererImplemented* renderer )
 	if( shader == NULL ) return NULL;
 
 	return new Guide( renderer, shader );
+}
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+void Guide::OnLostDevice()
+{
+	m_shader->OnLostDevice();
+}
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+void Guide::OnResetDevice()
+{
+	m_shader->OnResetDevice();
 }
 
 //----------------------------------------------------------------------------------

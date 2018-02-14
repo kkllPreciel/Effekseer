@@ -1,4 +1,4 @@
-
+ï»¿
 #ifndef	__EFFEKSEERRENDERER_DX9_RENDERER_IMPLEMENTED_H__
 #define	__EFFEKSEERRENDERER_DX9_RENDERER_IMPLEMENTED_H__
 
@@ -10,8 +10,9 @@
 #include "../../EffekseerRendererCommon/EffekseerRenderer.RenderStateBase.h"
 #include "../../EffekseerRendererCommon/EffekseerRenderer.StandardRenderer.h"
 
-/* Visual Studio 2008 */
-#if _MSC_VER == 1500
+#include <array>
+
+#ifdef _MSC_VER
 #include <xmmintrin.h>
 #endif
 
@@ -71,7 +72,7 @@ inline void TransformVertexes( Vertex* vertexes, int32_t count, const ::Effeksee
 		float tmp_out[4];
 		::Effekseer::Vector3D* inout_prev;
 
-		// ‚Pƒ‹[ƒv–Ú
+		// ï¼‘ãƒ«ãƒ¼ãƒ—ç›®
 		{
 			::Effekseer::Vector3D* inout_cur = &vertexes[0].Pos;
 			__m128 v = _mm_loadu_ps( (const float*)inout_cur );
@@ -87,7 +88,7 @@ inline void TransformVertexes( Vertex* vertexes, int32_t count, const ::Effeksee
 			__m128 a23 = _mm_add_ps( a2, r3 );
 			__m128 a = _mm_add_ps( a01, a23 );
 
-			// ¡‰ñ‚ÌŒ‹‰Ê‚ğƒXƒgƒA‚µ‚Ä‚¨‚­
+			// ä»Šå›ã®çµæœã‚’ã‚¹ãƒˆã‚¢ã—ã¦ãŠã
 			_mm_storeu_ps( tmp_out, a );
 			inout_prev = inout_cur;
 		}
@@ -108,17 +109,17 @@ inline void TransformVertexes( Vertex* vertexes, int32_t count, const ::Effeksee
 			__m128 a23 = _mm_add_ps( a2, r3 );
 			__m128 a = _mm_add_ps( a01, a23 );
 
-			// ’¼‘O‚Ìƒ‹[ƒv‚ÌŒ‹‰Ê‚ğ‘‚«‚İ‚Ü‚·
+			// ç›´å‰ã®ãƒ«ãƒ¼ãƒ—ã®çµæœã‚’æ›¸ãè¾¼ã¿ã¾ã™
 			inout_prev->X = tmp_out[0];
 			inout_prev->Y = tmp_out[1];
 			inout_prev->Z = tmp_out[2];
 
-			// ¡‰ñ‚ÌŒ‹‰Ê‚ğƒXƒgƒA‚µ‚Ä‚¨‚­
+			// ä»Šå›ã®çµæœã‚’ã‚¹ãƒˆã‚¢ã—ã¦ãŠã
 			_mm_storeu_ps( tmp_out, a );
 			inout_prev = inout_cur;
 		}
 
-		// ÅŒã‚Ìƒ‹[ƒv‚ÌŒ‹‰Ê‚ğ‘‚«‚İ
+		// æœ€å¾Œã®ãƒ«ãƒ¼ãƒ—ã®çµæœã‚’æ›¸ãè¾¼ã¿
 		{
 			inout_prev->X = tmp_out[0];
 			inout_prev->Y = tmp_out[1];
@@ -147,7 +148,7 @@ inline void TransformVertexes(VertexDistortion* vertexes, int32_t count, const :
 	float tmp_out[4];
 	::Effekseer::Vector3D* inout_prev;
 
-	// ‚Pƒ‹[ƒv–Ú
+	// ï¼‘ãƒ«ãƒ¼ãƒ—ç›®
 	{
 		::Effekseer::Vector3D* inout_cur = &vertexes[0].Pos;
 		__m128 v = _mm_loadu_ps((const float*) inout_cur);
@@ -163,7 +164,7 @@ inline void TransformVertexes(VertexDistortion* vertexes, int32_t count, const :
 		__m128 a23 = _mm_add_ps(a2, r3);
 		__m128 a = _mm_add_ps(a01, a23);
 
-		// ¡‰ñ‚ÌŒ‹‰Ê‚ğƒXƒgƒA‚µ‚Ä‚¨‚­
+		// ä»Šå›ã®çµæœã‚’ã‚¹ãƒˆã‚¢ã—ã¦ãŠã
 		_mm_storeu_ps(tmp_out, a);
 		inout_prev = inout_cur;
 	}
@@ -184,17 +185,17 @@ inline void TransformVertexes(VertexDistortion* vertexes, int32_t count, const :
 		__m128 a23 = _mm_add_ps(a2, r3);
 		__m128 a = _mm_add_ps(a01, a23);
 
-		// ’¼‘O‚Ìƒ‹[ƒv‚ÌŒ‹‰Ê‚ğ‘‚«‚İ‚Ü‚·
+		// ç›´å‰ã®ãƒ«ãƒ¼ãƒ—ã®çµæœã‚’æ›¸ãè¾¼ã¿ã¾ã™
 		inout_prev->X = tmp_out[0];
 		inout_prev->Y = tmp_out[1];
 		inout_prev->Z = tmp_out[2];
 
-		// ¡‰ñ‚ÌŒ‹‰Ê‚ğƒXƒgƒA‚µ‚Ä‚¨‚­
+		// ä»Šå›ã®çµæœã‚’ã‚¹ãƒˆã‚¢ã—ã¦ãŠã
 		_mm_storeu_ps(tmp_out, a);
 		inout_prev = inout_cur;
 	}
 
-	// ÅŒã‚Ìƒ‹[ƒv‚ÌŒ‹‰Ê‚ğ‘‚«‚İ
+	// æœ€å¾Œã®ãƒ«ãƒ¼ãƒ—ã®çµæœã‚’æ›¸ãè¾¼ã¿
 		{
 			inout_prev->X = tmp_out[0];
 			inout_prev->Y = tmp_out[1];
@@ -241,19 +242,17 @@ inline void TransformVertexes(VertexDistortion* vertexes, int32_t count, const :
 //
 //----------------------------------------------------------------------------------
 /**
-	@brief	•`‰æƒNƒ‰ƒX
+	@brief	æç”»ã‚¯ãƒ©ã‚¹
 	@note
-	ƒc[ƒ‹Œü‚¯‚Ì•`‰æ‹@”\B
+	ãƒ„ãƒ¼ãƒ«å‘ã‘ã®æç”»æ©Ÿèƒ½ã€‚
 */
 class RendererImplemented
 	: public Renderer
+	, public ::Effekseer::ReferenceObject
 {
 friend class DeviceObject;
 
 private:
-	/* QÆƒJƒEƒ“ƒ^ */
-	int	m_reference;
-
 	LPDIRECT3DDEVICE9	m_d3d_device;
 
 	VertexBuffer*		m_vertexBuffer;
@@ -266,7 +265,7 @@ private:
 	Shader*							m_shader_distortion;
 	Shader*							m_shader_no_texture_distortion;
 
-	EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, IDirect3DTexture9*, Vertex, VertexDistortion>*	m_standardRenderer;
+	EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, Vertex, VertexDistortion>*	m_standardRenderer;
 
 
 	::Effekseer::Vector3D	m_lightDirection;
@@ -277,16 +276,16 @@ private:
 	::Effekseer::Matrix44	m_camera;
 	::Effekseer::Matrix44	m_cameraProj;
 
-	// À•WŒn
+	// åº§æ¨™ç³»
 	::Effekseer::CoordinateSystem		m_coordinateSystem;
 
 	::EffekseerRenderer::RenderStateBase*			m_renderState;
 
-	IDirect3DTexture9*					m_background;
+	::Effekseer::TextureData					m_background;
 
 	std::set<DeviceObject*>	m_deviceObjects;
 
-	// ƒXƒe[ƒg
+	// ã‚¹ãƒ†ãƒ¼ãƒˆ
 	DWORD	m_state_FVF;
 
 	DWORD	m_state_D3DRS_ALPHABLENDENABLE;
@@ -294,6 +293,11 @@ private:
 	DWORD	m_state_D3DRS_DESTBLEND;
 	DWORD	m_state_D3DRS_SRCBLEND;
 	DWORD	m_state_D3DRS_ALPHAREF;
+
+	DWORD	m_state_D3DRS_DESTBLENDALPHA;
+	DWORD	m_state_D3DRS_SRCBLENDALPHA;
+	DWORD	m_state_D3DRS_SEPARATEALPHABLENDENABLE;
+	DWORD	m_state_D3DRS_BLENDOPALPHA;
 
 	DWORD	m_state_D3DRS_ZENABLE;
 	DWORD	m_state_D3DRS_ZWRITEENABLE;
@@ -303,6 +307,12 @@ private:
 	DWORD	m_state_D3DRS_COLORVERTEX;
 	DWORD	m_state_D3DRS_LIGHTING;
 	DWORD	m_state_D3DRS_SHADEMODE;
+
+	std::array<DWORD, 4>	m_state_D3DSAMP_MAGFILTER;
+	std::array<DWORD, 4>	m_state_D3DSAMP_MINFILTER;
+	std::array<DWORD, 4>	m_state_D3DSAMP_MIPFILTER;
+	std::array<DWORD, 4>	m_state_D3DSAMP_ADDRESSU;
+	std::array<DWORD, 4>	m_state_D3DSAMP_ADDRESSV;
 
 	IDirect3DVertexShader9*			m_state_vertexShader;
 	IDirect3DPixelShader9*			m_state_pixelShader;
@@ -314,7 +324,10 @@ private:
 
 	IDirect3DIndexBuffer9*	m_state_IndexData;
 
-	IDirect3DBaseTexture9*	m_state_pTexture;
+	std::vector<float>	m_state_VertexShaderConstantF;
+	std::vector<float>	m_state_PixelShaderConstantF;
+
+	std::array<IDirect3DBaseTexture9*, 2>	m_state_pTexture;
 
 	bool	m_isChangedDevice;
 
@@ -324,12 +337,12 @@ private:
 
 public:
 	/**
-		@brief	ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+		@brief	ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	*/
 	RendererImplemented( int32_t squareMaxCount );
 
 	/**
-		@brief	ƒfƒXƒgƒ‰ƒNƒ^
+		@brief	ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	*/
 	~RendererImplemented();
 
@@ -337,155 +350,147 @@ public:
 	void OnResetDevice();
 
 	/**
-		@brief	‰Šú‰»
+		@brief	åˆæœŸåŒ–
 	*/
 	bool Initialize( LPDIRECT3DDEVICE9 device );
 
-	/**
-		@brief	QÆƒJƒEƒ“ƒ^‚ğ‰ÁZ‚·‚éB
-		@return	ÀsŒã‚ÌQÆƒJƒEƒ“ƒ^‚Ì’l
-	*/
-	int AddRef();
-
-	/**
-		@brief	QÆƒJƒEƒ“ƒ^‚ğŒ¸Z‚·‚éB
-		@return	ÀsŒã‚ÌQÆƒJƒEƒ“ƒ^‚Ì’l
-	*/
-	int Release();
-
-	void Destory();
+	void Destroy();
 
 	void SetRestorationOfStatesFlag(bool flag);
 
 	/**
-		@brief	•`‰æŠJn
+		@brief	æç”»é–‹å§‹
 	*/
 	bool BeginRendering();
 
 	/**
-		@brief	•`‰æI—¹
+		@brief	æç”»çµ‚äº†
 	*/
 	bool EndRendering();
 
 	/**
-		@brief	ƒfƒoƒCƒXæ“¾
+		@brief	ãƒ‡ãƒã‚¤ã‚¹å–å¾—
 	*/
 	LPDIRECT3DDEVICE9 GetDevice();
 
 	/**
-		@brief	’¸“_ƒoƒbƒtƒ@æ“¾
+		@brief	é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡å–å¾—
 	*/
 	VertexBuffer* GetVertexBuffer();
 
 	/**
-		@brief	ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@æ“¾
+		@brief	ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡å–å¾—
 	*/
 	IndexBuffer* GetIndexBuffer();
 
 	/**
-		@brief	Å‘å•`‰æƒXƒvƒ‰ƒCƒg”
+		@brief	æœ€å¤§æç”»ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆæ•°
 	*/
 	int32_t GetSquareMaxCount() const;
 
 	::EffekseerRenderer::RenderStateBase* GetRenderState();
 
 	/**
-		@brief	ƒ‰ƒCƒg‚Ì•ûŒü‚ğæ“¾‚·‚éB
+		@brief	ãƒ©ã‚¤ãƒˆã®æ–¹å‘ã‚’å–å¾—ã™ã‚‹ã€‚
 	*/
 	const ::Effekseer::Vector3D& GetLightDirection() const;
 
 	/**
-		@brief	ƒ‰ƒCƒg‚Ì•ûŒü‚ğİ’è‚·‚éB
+		@brief	ãƒ©ã‚¤ãƒˆã®æ–¹å‘ã‚’è¨­å®šã™ã‚‹ã€‚
 	*/
 	void SetLightDirection( ::Effekseer::Vector3D& direction );
 
 	/**
-		@brief	ƒ‰ƒCƒg‚ÌF‚ğæ“¾‚·‚éB
+		@brief	ãƒ©ã‚¤ãƒˆã®è‰²ã‚’å–å¾—ã™ã‚‹ã€‚
 	*/
 	const ::Effekseer::Color& GetLightColor() const;
 
 	/**
-		@brief	ƒ‰ƒCƒg‚ÌF‚ğİ’è‚·‚éB
+		@brief	ãƒ©ã‚¤ãƒˆã®è‰²ã‚’è¨­å®šã™ã‚‹ã€‚
 	*/
 	void SetLightColor( ::Effekseer::Color& color );
 
 	/**
-		@brief	ƒ‰ƒCƒg‚ÌŠÂ‹«Œõ‚ÌF‚ğæ“¾‚·‚éB
+		@brief	ãƒ©ã‚¤ãƒˆã®ç’°å¢ƒå…‰ã®è‰²ã‚’å–å¾—ã™ã‚‹ã€‚
 	*/
 	const ::Effekseer::Color& GetLightAmbientColor() const;
 
 	/**
-		@brief	ƒ‰ƒCƒg‚ÌŠÂ‹«Œõ‚ÌF‚ğİ’è‚·‚éB
+		@brief	ãƒ©ã‚¤ãƒˆã®ç’°å¢ƒå…‰ã®è‰²ã‚’è¨­å®šã™ã‚‹ã€‚
 	*/
 	void SetLightAmbientColor( ::Effekseer::Color& color );
 
 	/**
-		@brief	“Š‰es—ñ‚ğæ“¾‚·‚éB
+		@brief	æŠ•å½±è¡Œåˆ—ã‚’å–å¾—ã™ã‚‹ã€‚
 	*/
 	const ::Effekseer::Matrix44& GetProjectionMatrix() const;
 
 	/**
-		@brief	“Š‰es—ñ‚ğİ’è‚·‚éB
+		@brief	æŠ•å½±è¡Œåˆ—ã‚’è¨­å®šã™ã‚‹ã€‚
 	*/
 	void SetProjectionMatrix( const ::Effekseer::Matrix44& mat );
 
 	/**
-		@brief	ƒJƒƒ‰s—ñ‚ğæ“¾‚·‚éB
+		@brief	ã‚«ãƒ¡ãƒ©è¡Œåˆ—ã‚’å–å¾—ã™ã‚‹ã€‚
 	*/
 	const ::Effekseer::Matrix44& GetCameraMatrix() const;
 
 	/**
-		@brief	ƒJƒƒ‰s—ñ‚ğİ’è‚·‚éB
+		@brief	ã‚«ãƒ¡ãƒ©è¡Œåˆ—ã‚’è¨­å®šã™ã‚‹ã€‚
 	*/
 	void SetCameraMatrix( const ::Effekseer::Matrix44& mat );
 
 	/**
-		@brief	ƒJƒƒ‰ƒvƒƒWƒFƒNƒVƒ‡ƒ“s—ñ‚ğæ“¾‚·‚éB
+		@brief	ã‚«ãƒ¡ãƒ©ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ã‚·ãƒ§ãƒ³è¡Œåˆ—ã‚’å–å¾—ã™ã‚‹ã€‚
 	*/
 	::Effekseer::Matrix44& GetCameraProjectionMatrix();
 
 	/**
-		@brief	ƒXƒvƒ‰ƒCƒgƒŒƒ“ƒ_ƒ‰[‚ğ¶¬‚·‚éB
+		@brief	ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆãƒ¬ãƒ³ãƒ€ãƒ©ãƒ¼ã‚’ç”Ÿæˆã™ã‚‹ã€‚
 	*/
 	::Effekseer::SpriteRenderer* CreateSpriteRenderer();
 
 	/**
-		@brief	ƒŠƒ{ƒ“ƒŒƒ“ƒ_ƒ‰[‚ğ¶¬‚·‚éB
+		@brief	ãƒªãƒœãƒ³ãƒ¬ãƒ³ãƒ€ãƒ©ãƒ¼ã‚’ç”Ÿæˆã™ã‚‹ã€‚
 	*/
 	::Effekseer::RibbonRenderer* CreateRibbonRenderer();
 	
 	/**
-		@brief	ƒŠƒ“ƒOƒŒƒ“ƒ_ƒ‰[‚ğ¶¬‚·‚éB
+		@brief	ãƒªãƒ³ã‚°ãƒ¬ãƒ³ãƒ€ãƒ©ãƒ¼ã‚’ç”Ÿæˆã™ã‚‹ã€‚
 	*/
 	::Effekseer::RingRenderer* CreateRingRenderer();
 
 	/**
-		@brief	ƒ‚ƒfƒ‹ƒŒƒ“ƒ_ƒ‰[‚ğ¶¬‚·‚éB
+		@brief	ãƒ¢ãƒ‡ãƒ«ãƒ¬ãƒ³ãƒ€ãƒ©ãƒ¼ã‚’ç”Ÿæˆã™ã‚‹ã€‚
 	*/
 	::Effekseer::ModelRenderer* CreateModelRenderer();
 
 	/**
-		@brief	‹OÕƒŒƒ“ƒ_ƒ‰[‚ğ¶¬‚·‚éB
+		@brief	è»Œè·¡ãƒ¬ãƒ³ãƒ€ãƒ©ãƒ¼ã‚’ç”Ÿæˆã™ã‚‹ã€‚
 	*/
 	::Effekseer::TrackRenderer* CreateTrackRenderer();
 
 	/**
-		@brief	ƒeƒNƒXƒ`ƒƒ“ÇƒNƒ‰ƒX‚ğ¶¬‚·‚éB
+		@brief	ãƒ†ã‚¯ã‚¹ãƒãƒ£èª­è¾¼ã‚¯ãƒ©ã‚¹ã‚’ç”Ÿæˆã™ã‚‹ã€‚
 	*/
 	::Effekseer::TextureLoader* CreateTextureLoader( ::Effekseer::FileInterface* fileInterface = NULL );
 
 	/**
-		@brief	ƒ‚ƒfƒ‹“ÇƒNƒ‰ƒX‚ğ¶¬‚·‚éB
+		@brief	ãƒ¢ãƒ‡ãƒ«èª­è¾¼ã‚¯ãƒ©ã‚¹ã‚’ç”Ÿæˆã™ã‚‹ã€‚
 	*/
 	::Effekseer::ModelLoader* CreateModelLoader( ::Effekseer::FileInterface* fileInterface = NULL );
 
 	/**
-	@brief	”wŒi‚ğæ“¾‚·‚éB
+	@brief	èƒŒæ™¯ã‚’å–å¾—ã™ã‚‹ã€‚
 	*/
-	IDirect3DTexture9* GetBackground() override { return m_background; }
+	Effekseer::TextureData* GetBackground() override 
+	{
+		if (m_background.UserPtr == nullptr) return nullptr;
+		return &m_background;
+	}
 
 	/**
-	@brief	”wŒi‚ğİ’è‚·‚éB
+	@brief	èƒŒæ™¯ã‚’è¨­å®šã™ã‚‹ã€‚
 	*/
 	void SetBackground(IDirect3DTexture9* background) override;
 
@@ -493,7 +498,7 @@ public:
 
 	void SetDistortingCallback(EffekseerRenderer::DistortingCallback* callback) override;
 
-	EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, IDirect3DTexture9*, Vertex, VertexDistortion>* GetStandardRenderer() { return m_standardRenderer; }
+	EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, Vertex, VertexDistortion>* GetStandardRenderer() { return m_standardRenderer; }
 
 	void SetVertexBuffer( VertexBuffer* vertexBuffer, int32_t size );
 	void SetVertexBuffer(IDirect3DVertexBuffer9* vertexBuffer, int32_t size);
@@ -507,11 +512,15 @@ public:
 	void BeginShader(Shader* shader);
 	void EndShader(Shader* shader);
 
-	void SetTextures(Shader* shader, IDirect3DTexture9** textures, int32_t count);
+	void SetTextures(Shader* shader, Effekseer::TextureData** textures, int32_t count);
 
 	void ChangeDevice( LPDIRECT3DDEVICE9 device );
 
 	void ResetRenderState();
+
+	virtual int GetRef() { return ::Effekseer::ReferenceObject::GetRef(); }
+	virtual int AddRef() { return ::Effekseer::ReferenceObject::AddRef(); }
+	virtual int Release() { return ::Effekseer::ReferenceObject::Release(); }
 };
 
 //----------------------------------------------------------------------------------

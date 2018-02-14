@@ -1,4 +1,4 @@
-
+ï»¿
 #pragma once
 
 //----------------------------------------------------------------------------------
@@ -32,13 +32,13 @@ public:
 
 	GLuint GetInterface() { return m_buffer; }
 
-public:	// ƒfƒoƒCƒX•œ‹Œ—p
+public:	// ãƒ‡ãƒã‚¤ã‚¹å¾©æ—§ç”¨
 	virtual void OnLostDevice();
 	virtual void OnResetDevice();
 
 public:
-	void Lock();
-	void Unlock();
+	void Lock() override;
+	void Unlock() override;
 };
 
 //-----------------------------------------------------------------------------------

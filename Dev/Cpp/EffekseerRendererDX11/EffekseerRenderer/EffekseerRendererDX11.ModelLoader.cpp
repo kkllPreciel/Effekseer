@@ -1,4 +1,4 @@
-
+ï»¿
 #ifdef __EFFEKSEER_RENDERER_INTERNAL_LOADER__
 
 //----------------------------------------------------------------------------------
@@ -16,10 +16,12 @@ namespace EffekseerRendererDX11
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-ModelLoader::ModelLoader( Renderer* renderer, ::Effekseer::FileInterface* fileInterface )
-	: m_renderer		( renderer )
+ModelLoader::ModelLoader(ID3D11Device* device, ::Effekseer::FileInterface* fileInterface )
+	: device			( device )
 	, m_fileInterface	( fileInterface )
 {
+	ES_SAFE_ADDREF(device);
+
 	if( m_fileInterface == NULL )
 	{
 		m_fileInterface = &m_defaultFileInterface;
@@ -31,7 +33,7 @@ ModelLoader::ModelLoader( Renderer* renderer, ::Effekseer::FileInterface* fileIn
 //----------------------------------------------------------------------------------
 ModelLoader::~ModelLoader()
 {
-
+	ES_SAFE_RELEASE(device);
 }
 
 //----------------------------------------------------------------------------------
@@ -55,92 +57,94 @@ void* ModelLoader::Load( const EFK_CHAR* path )
 
 		model->ModelCount = Effekseer::Min( Effekseer::Max( model->GetModelCount(), 1 ), 40);
 
-		model->VertexCount = model->GetVertexCount();
+		model->InternalModels = new Model::InternalModel[model->GetFrameCount()];
 
-		if( model->VertexCount == 0 ) return NULL;
-
+		for (int32_t f = 0; f < model->GetFrameCount(); f++)
 		{
-			std::vector<Effekseer::Model::VertexWithIndex> vs;
-			for(int32_t m = 0; m < model->ModelCount; m++ )
+			model->InternalModels[f].VertexCount = model->GetVertexCount(f);
+			
 			{
-				for( int32_t i = 0; i < model->GetVertexCount(); i++ )
+				std::vector<Effekseer::Model::VertexWithIndex> vs;
+				for (int32_t m = 0; m < model->ModelCount; m++)
 				{
-					Effekseer::Model::VertexWithIndex v;
-					v.Position = model->GetVertexes()[i].Position;
-					v.Normal = model->GetVertexes()[i].Normal;
-					v.Binormal = model->GetVertexes()[i].Binormal;
-					v.Tangent = model->GetVertexes()[i].Tangent;
-					v.UV = model->GetVertexes()[i].UV;
-					v.Index[0] = m;
+					for (int32_t i = 0; i < model->GetVertexCount(f); i++)
+					{
+						Effekseer::Model::VertexWithIndex v;
+						v.Position = model->GetVertexes(f)[i].Position;
+						v.Normal = model->GetVertexes(f)[i].Normal;
+						v.Binormal = model->GetVertexes(f)[i].Binormal;
+						v.Tangent = model->GetVertexes(f)[i].Tangent;
+						v.UV = model->GetVertexes(f)[i].UV;
+						v.VColor = model->GetVertexes(f)[i].VColor;
+						v.Index[0] = m;
 
-					vs.push_back( v );
+						vs.push_back(v);
+					}
 				}
+
+				ID3D11Buffer* vb = NULL;
+
+				D3D11_BUFFER_DESC hBufferDesc;
+				hBufferDesc.ByteWidth = sizeof(Effekseer::Model::VertexWithIndex) * model->GetVertexCount(f) * model->ModelCount;
+				hBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+				hBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+				hBufferDesc.CPUAccessFlags = 0;
+				hBufferDesc.MiscFlags = 0;
+				hBufferDesc.StructureByteStride = sizeof(float);
+
+				D3D11_SUBRESOURCE_DATA hSubResourceData;
+				hSubResourceData.pSysMem = &(vs[0]);
+				hSubResourceData.SysMemPitch = 0;
+				hSubResourceData.SysMemSlicePitch = 0;
+
+				if (FAILED(device->CreateBuffer(&hBufferDesc, &hSubResourceData, &vb)))
+				{
+					return NULL;
+				}
+
+				model->InternalModels[f].VertexBuffer = vb;
 			}
 
-			ID3D11Buffer* vb = NULL;
+			model->InternalModels[f].FaceCount = model->GetFaceCount(f);
+			model->InternalModels[f].IndexCount = model->InternalModels[f].FaceCount * 3;
 
-			D3D11_BUFFER_DESC hBufferDesc;
-			hBufferDesc.ByteWidth = sizeof(Effekseer::Model::VertexWithIndex) * model->GetVertexCount() * model->ModelCount;
-			hBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-			hBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-			hBufferDesc.CPUAccessFlags = 0;
-			hBufferDesc.MiscFlags = 0;
-			hBufferDesc.StructureByteStride = sizeof(float);
-
-			D3D11_SUBRESOURCE_DATA hSubResourceData;
-			hSubResourceData.pSysMem = &(vs[0]);
-			hSubResourceData.SysMemPitch = 0;
-			hSubResourceData.SysMemSlicePitch = 0;
-
-			if( FAILED( m_renderer->GetDevice()->CreateBuffer(&hBufferDesc, &hSubResourceData, &vb) ) )
 			{
-				return NULL;
-			}
+				std::vector<Effekseer::Model::Face> fs;
+				for (int32_t m = 0; m < model->ModelCount; m++)
+				{
+					for (int32_t i = 0; i < model->InternalModels[f].FaceCount; i++)
+					{
+						Effekseer::Model::Face face;
+						face.Indexes[0] = model->GetFaces(f)[i].Indexes[0] + model->GetVertexCount(f) * m;
+						face.Indexes[1] = model->GetFaces(f)[i].Indexes[1] + model->GetVertexCount(f) * m;
+						face.Indexes[2] = model->GetFaces(f)[i].Indexes[2] + model->GetVertexCount(f) * m;
+						fs.push_back(face);
+					}
+				}
 
-			model->VertexBuffer = vb;
+				ID3D11Buffer* ib = NULL;
+				D3D11_BUFFER_DESC hBufferDesc;
+				hBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+				hBufferDesc.ByteWidth = sizeof(int32_t) * 3 * model->InternalModels[f].FaceCount * model->ModelCount;
+				hBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+				hBufferDesc.CPUAccessFlags = 0;
+				hBufferDesc.MiscFlags = 0;
+				hBufferDesc.StructureByteStride = sizeof(int32_t);
+
+				D3D11_SUBRESOURCE_DATA hSubResourceData;
+				hSubResourceData.pSysMem = &(fs[0]);
+				hSubResourceData.SysMemPitch = 0;
+				hSubResourceData.SysMemSlicePitch = 0;
+
+				if (FAILED(device->CreateBuffer(&hBufferDesc, &hSubResourceData, &ib)))
+				{
+					return NULL;
+				}
+
+				model->InternalModels[f].IndexBuffer = ib;
+			}
 		}
 
-		model->FaceCount = model->GetFaceCount();
-
-		/* 0.50‚æ‚è’Ç‰Á(0.50ˆÈ‘O‚©‚çˆÚs‚·‚éŽž‚Í’Ç‹L‚·‚é•K—v‚ ‚è) */
-		model->IndexCount = model->FaceCount * 3;
-
-		{
-			std::vector<Effekseer::Model::Face> fs;
-			for(int32_t m = 0; m < model->ModelCount; m++ )
-			{
-				for( int32_t i = 0; i < model->FaceCount; i++ )
-				{
-					Effekseer::Model::Face f;
-					f.Indexes[0] = model->GetFaces()[i].Indexes[0] + model->GetVertexCount() * m;
-					f.Indexes[1] = model->GetFaces()[i].Indexes[1] + model->GetVertexCount() * m;
-					f.Indexes[2] = model->GetFaces()[i].Indexes[2] + model->GetVertexCount() * m;
-					fs.push_back(f);
-				}
-			}
-
-			ID3D11Buffer* ib = NULL;
-			D3D11_BUFFER_DESC hBufferDesc;
-			hBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-			hBufferDesc.ByteWidth = sizeof(int32_t) * 3 * model->FaceCount * model->ModelCount;
-			hBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-			hBufferDesc.CPUAccessFlags = 0;
-			hBufferDesc.MiscFlags = 0;
-			hBufferDesc.StructureByteStride = sizeof(int32_t);
-
-			D3D11_SUBRESOURCE_DATA hSubResourceData;
-			hSubResourceData.pSysMem = &(fs[0]);
-			hSubResourceData.SysMemPitch = 0;
-			hSubResourceData.SysMemSlicePitch = 0;
-
-			if( FAILED( m_renderer->GetDevice()->CreateBuffer(&hBufferDesc, &hSubResourceData, &ib) ) )
-			{
-				return NULL;
-			}
-
-			model->IndexBuffer = ib;
-		}
-		
 		delete [] data_model;
 
 		return (void*)model;

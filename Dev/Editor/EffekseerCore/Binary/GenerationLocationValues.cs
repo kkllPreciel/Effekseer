@@ -37,10 +37,16 @@ namespace Effekseer.Binary
 			}
 			if (value.Type.GetValue() == Data.GenerationLocationValues.ParameterType.Model)
 			{
-				var path = value.Model.Model.RelativePath;
-				if (model_and_index.ContainsKey(path))
+				var relative_path = value.Model.Model.RelativePath;
+
+                if (!string.IsNullOrEmpty(relative_path))
+                {
+                    relative_path = System.IO.Path.GetDirectoryName(relative_path) + "/" + System.IO.Path.GetFileNameWithoutExtension(relative_path) + ".efkmodel";
+                }
+
+				if (model_and_index.ContainsKey(relative_path))
 				{
-					data.Add(model_and_index[path].GetBytes());
+					data.Add(model_and_index[relative_path].GetBytes());
 				}
 				else
 				{
@@ -59,6 +65,22 @@ namespace Effekseer.Binary
 				data.Add((value.Circle.AngleEnd.Max / 180.0f * (float)Math.PI).GetBytes());
 				data.Add((value.Circle.AngleEnd.Min / 180.0f * (float)Math.PI).GetBytes());
 				data.Add(((int)value.Circle.Type.Value).GetBytes());
+
+				// Version 1.30(10)
+				data.Add(((int)value.Circle.AxisDirection.Value).GetBytes());
+
+				data.Add((value.Circle.AngleNoize.Max / 180.0f * (float)Math.PI).GetBytes());
+				data.Add((value.Circle.AngleNoize.Min / 180.0f * (float)Math.PI).GetBytes());
+			}
+
+			else if (value.Type.GetValue() == Data.GenerationLocationValues.ParameterType.Line)
+			{
+				data.Add((value.Line.Division.Value).GetBytes());
+				data.Add(value.Line.PositionStart.GetBytes(1.0f));
+				data.Add(value.Line.PositionEnd.GetBytes(1.0f));
+				data.Add((value.Line.PositionNoize.Max).GetBytes());
+				data.Add((value.Line.PositionNoize.Min).GetBytes());
+				data.Add(((int)value.Line.Type.Value).GetBytes());
 			}
 
 			return data.ToArray().ToArray();

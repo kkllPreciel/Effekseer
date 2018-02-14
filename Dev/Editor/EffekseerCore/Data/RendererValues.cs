@@ -189,22 +189,6 @@ namespace Effekseer.Data
 				ColorTexture = new Value.Path("画像ファイル (*.png)|*.png", true, "");
 			}
 
-			public enum BillboardType : int
-			{
-				[Name(value = "ビルボード", language = Language.Japanese)]
-				[Name(value = "Billboard", language = Language.English)]
-				Billboard = 0,
-				[Name(value = "Z軸回転ビルボード", language = Language.Japanese)]
-				[Name(value = "Rotated Billboard", language = Language.English)]
-				RotatedBillboard = 3,
-				[Name(value = "Y軸固定", language = Language.Japanese)]
-				[Name(value = "Fixed Y-Axis", language = Language.English)]
-				YAxisFixed = 1,
-				[Name(value = "固定", language = Language.Japanese)]
-				[Name(value = "Fixed", language = Language.English)]
-				Fixed = 2,
-			}
-
             public enum ColorType : int
             {
                 [Name(value = "標準", language = Language.Japanese)]
@@ -313,15 +297,8 @@ namespace Effekseer.Data
 				Position = new Value.Enum<PositionType>(PositionType.Default);
 				Position_Fixed_L = new Value.Float(-0.5f);
 				Position_Fixed_R = new Value.Float(0.5f);
-			
-				if(Core.Language == Language.Japanese)
-				{
-					ColorTexture = new Value.Path("画像ファイル (*.png)|*.png", true, "");
-				}
-				else if(Core.Language == Language.English)
-				{
-					ColorTexture = new Value.Path("Image File (*.png)|*.png", true, "");
-				}
+
+                ColorTexture = new Value.Path(Properties.Resources.ImageFilter, true, "");
 			}
 
             public enum ColorAllType : int
@@ -546,30 +523,7 @@ namespace Effekseer.Data
                 InnerColor_Random = new Value.ColorWithRandom(255, 255, 255, 0);
                 InnerColor_Easing = new ColorEasingParamater();
 
-				if (Core.Language == Language.Japanese)
-				{
-					ColorTexture = new Value.Path("画像ファイル (*.png)|*.png", true, "");
-				}
-				else if (Core.Language == Language.English)
-				{
-					ColorTexture = new Value.Path("Image File (*.png)|*.png", true, "");
-				}
-            }
-
-            public enum BillboardType : int
-            {
-                [Name(value = "ビルボード", language = Language.Japanese)]
-				[Name(value = "Billboard", language = Language.English)]
-                Billboard = 0,
-				[Name(value = "Z軸回転ビルボード", language = Language.Japanese)]
-				[Name(value = "Rotated Billboard", language = Language.English)]
-                RotatedBillboard = 3,
-                [Name(value = "Y軸固定", language = Language.Japanese)]
-				[Name(value = "Fixed Y-Axis", language = Language.English)]
-                YAxisFixed = 1,
-                [Name(value = "固定", language = Language.Japanese)]
-				[Name(value = "Fixed", language = Language.English)]
-                Fixed = 2,
+                ColorTexture = new Value.Path(Properties.Resources.ImageFilter, true, "");
             }
 
             public enum ViewingAngleType : int
@@ -689,7 +643,7 @@ namespace Effekseer.Data
 			[Description(language = Language.Japanese, value = "モデルファイル")]
 			[Name(language = Language.English, value = "Model")]
 			[Description(language = Language.English, value = "Model File")]
-			public Value.Path Model
+			public Value.PathForModel Model
 			{
 				get;
 				private set;
@@ -705,6 +659,10 @@ namespace Effekseer.Data
 				private set;
 			}
 
+			[Name(language = Language.Japanese, value = "配置方法")]
+			[Name(language = Language.English, value = "Configuration")]
+			public Value.Enum<BillboardType> Billboard { get; private set; }
+
 			[Name(language = Language.Japanese, value = "ライティング")]
 			[Name(language = Language.English, value = "Lighting")]
 			public Value.Boolean Lighting { get; private set; }
@@ -715,17 +673,11 @@ namespace Effekseer.Data
 
 			public ModelParamater()
 			{
-				if (Core.Language == Language.Japanese)
-				{
-					Model = new Value.Path("モデルファイル (*.efkmodel)|*.efkmodel", true, "");
-					NormalTexture = new Value.PathForImage("画像ファイル (*.png)|*.png", true, "");
-				}
-				else if (Core.Language == Language.English)
-				{
-					Model = new Value.Path("Model File (*.efkmodel)|*.efkmodel", true, "");
-					NormalTexture = new Value.PathForImage("Image File (*.png)|*.png", true, "");
-				}
-				
+                Model = new Value.PathForModel(Properties.Resources.ModelFilter, true, "");
+                NormalTexture = new Value.PathForImage(Properties.Resources.ImageFilter, true, "");
+
+				Billboard = new Value.Enum<BillboardType>(BillboardType.Fixed);
+
 				Lighting = new Value.Boolean(true);
 				Culling = new Value.Enum<CullingValues>(Data.CullingValues.Front);
 
@@ -945,26 +897,48 @@ namespace Effekseer.Data
 			}
 		}
 
+		public enum BillboardType : int
+		{
+			[Name(value = "ビルボード", language = Language.Japanese)]
+			[Name(value = "Billboard", language = Language.English)]
+			Billboard = 0,
+			[Name(value = "Z軸回転ビルボード", language = Language.Japanese)]
+			[Name(value = "Rotated Billboard", language = Language.English)]
+			RotatedBillboard = 3,
+			[Name(value = "Y軸固定", language = Language.Japanese)]
+			[Name(value = "Fixed Y-Axis", language = Language.English)]
+			YAxisFixed = 1,
+			[Name(value = "固定", language = Language.Japanese)]
+			[Name(value = "Fixed", language = Language.English)]
+			Fixed = 2,
+		}
+
 		public enum ParamaterType : int
 		{
 			[Name(value = "無し", language = Language.Japanese)]
 			[Name(value = "None", language = Language.English)]
+			[Icon(resourceName = "NodeEmpty")]
 			None = 0,
 			//Particle = 1,
 			[Name(value = "スプライト", language = Language.Japanese)]
 			[Name(value = "Sprite", language = Language.English)]
+			[Icon(resourceName = "NodeSprite")]
 			Sprite = 2,
 			[Name(value = "リボン", language = Language.Japanese)]
 			[Name(value = "Ribbon", language = Language.English)]
+			[Icon(resourceName = "NodeRibbon")]
             Ribbon = 3,
 			[Name(value = "軌跡", language = Language.Japanese)]
 			[Name(value = "Track", language = Language.English)]
+			[Icon(resourceName = "NodeTrack")]
 			Track = 6,
             [Name(value = "リング", language = Language.Japanese)]
 			[Name(value = "Ring", language = Language.English)]
+			[Icon(resourceName = "NodeRing")]
             Ring = 4,
 			[Name(value = "モデル", language = Language.Japanese)]
 			[Name(value = "Model", language = Language.English)]
+			[Icon(resourceName = "NodeModel")]
 			Model = 5,
 		}
 

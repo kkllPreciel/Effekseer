@@ -1,4 +1,4 @@
-
+ï»¿
 #ifndef	__EFFEKSEER_BASE_H__
 #define	__EFFEKSEER_BASE_H__
 
@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include <map>
 #include <vector>
@@ -20,6 +21,7 @@
 #include <list>
 #include <string>
 #include <queue>
+#include <chrono>
 
 //----------------------------------------------------------------------------------
 //
@@ -29,11 +31,6 @@
 #else
 #define	EFK_STDCALL
 #endif
-
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-#include <stdint.h>
 
 //----------------------------------------------------------------------------------
 //
@@ -95,21 +92,21 @@ class Model;
 //
 //----------------------------------------------------------------------------------
 /**
-	@brief	ƒCƒ“ƒXƒ^ƒ“ƒX‚Ìó‘Ô
+	@brief	ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã®çŠ¶æ…‹
 */
 enum eInstanceState
 {
 	/**
-		@brief	³í“®ì’†
+		@brief	æ­£å¸¸å‹•ä½œä¸­
 	*/
 	INSTANCE_STATE_ACTIVE,
 
 	/**
-		@brief	íœ’†
+		@brief	å‰Šé™¤ä¸­
 	*/
 	INSTANCE_STATE_REMOVING,
 	/**
-		@brief	íœ
+		@brief	å‰Šé™¤
 	*/
 	INSTANCE_STATE_REMOVED,
 
@@ -120,7 +117,7 @@ enum eInstanceState
 //
 //----------------------------------------------------------------------------------
 /**
-	@brief	ƒGƒtƒFƒNƒg‚ÉŠ‘®‚·‚éƒm[ƒh‚Ìí—Ş
+	@brief	ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã«æ‰€å±ã™ã‚‹ãƒãƒ¼ãƒ‰ã®ç¨®é¡
 */
 enum eEffectNodeType
 {

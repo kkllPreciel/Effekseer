@@ -1,3 +1,5 @@
+Ôªø
+#if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
 
 //----------------------------------------------------------------------------------
 // Include
@@ -11,62 +13,6 @@
 //
 //----------------------------------------------------------------------------------
 namespace Effekseer {
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-#ifdef _WIN32
-static void Sleep_( int32_t ms )
-{
-	Sleep( ms );
-}
-#else
-static void Sleep_( int32_t ms )
-{
-	usleep( 1000 * ms );
-}
-#endif
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-static void PathCombine(EFK_CHAR* dst, const EFK_CHAR* src1, const EFK_CHAR* src2)
-{
-	int len1 = 0, len2 = 0;
-	if( src1 != NULL )
-	{
-		for( len1 = 0; src1[len1] != L'\0'; len1++ ) {}
-		memcpy( dst, src1, len1 * sizeof(EFK_CHAR) );
-		if( len1 > 0 && src1[len1 - 1] != L'/' && src1[len1 - 1] != L'\\' )
-		{
-			dst[len1++] = L'/';
-		}
-	}
-	if( src2 != NULL)
-	{
-		for( len2 = 0; src2[len2] != L'\0'; len2++ ) {}
-		memcpy( &dst[len1], src2, len2 * sizeof(EFK_CHAR) );
-	}
-	dst[len1 + len2] = L'\0';
-}
-
-static void GetParentDir(EFK_CHAR* dst, const EFK_CHAR* src)
-{
-	int i, last = -1;
-	for( i = 0; src[i] != L'\0'; i++ )
-	{
-		if( src[i] == L'/' || src[i] == L'\\' )
-			last = i;
-	}
-	if( last >= 0 )
-	{
-		memcpy( dst, src, last * sizeof(EFK_CHAR) );
-		dst[last] = L'\0';
-	}
-	else
-	{
-		dst[0] = L'\0';
-	}
-}
-
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -87,7 +33,7 @@ void ClientImplemented::RecvAsync( void* data )
 
 			if( recvSize == 0 || recvSize == -1 )
 			{
-				/* é∏îs */
+				/* Â§±Êïó */
 				client->Stop();
 				return;
 			}
@@ -129,7 +75,7 @@ HOSTENT* ClientImplemented::GetHostEntry( const char* host )
 	HOSTENT* hostEntry = NULL;
 	IN_ADDR InAddrHost;
 
-	/* IPÉAÉhÉåÉXÇ©DNSÇ©í≤Ç◊ÇÈ */
+	/* IP„Ç¢„Éâ„É¨„Çπ„ÅãDNS„ÅãË™ø„Åπ„Çã */
 	InAddrHost.s_addr = ::inet_addr( host );
 	if ( InAddrHost.s_addr == InaddrNone )
 	{
@@ -142,7 +88,7 @@ HOSTENT* ClientImplemented::GetHostEntry( const char* host )
 	}
 	else
 	{
-		/* IPÉAÉhÉåÉX */
+		/* IP„Ç¢„Éâ„É¨„Çπ */
 		hostEntry = ::gethostbyaddr( (const char*)(&InAddrHost), sizeof(IN_ADDR), AF_INET );
 		if ( hostEntry == NULL )
 		{
@@ -163,15 +109,14 @@ bool ClientImplemented::Start( char* host, uint16_t port )
 	SOCKADDR_IN sockAddr;
 	HOSTENT* hostEntry= NULL;
 	
-	/* É\ÉPÉbÉgê∂ê¨ */
+	// Create a socket
 	EfkSocket socket_ = Socket::GenSocket();
 	if ( socket_ == InvalidSocket )
 	{
-		if ( socket_ != InvalidSocket ) Socket::Close( socket_ );
 		return false;
 	}
 
-	/* ÉzÉXÉgèÓïÒéÊìæ */
+	/* „Éõ„Çπ„ÉàÊÉÖÂ†±ÂèñÂæó */
 	hostEntry = GetHostEntry( host );
 	if ( hostEntry == NULL )
 	{
@@ -179,13 +124,13 @@ bool ClientImplemented::Start( char* host, uint16_t port )
 		return false;
 	}
 
-	/* ê⁄ë±ópÉfÅ[É^ê∂ê¨ */
+	/* Êé•Á∂öÁî®„Éá„Éº„ÇøÁîüÊàê */
 	memset( &sockAddr, 0, sizeof(SOCKADDR_IN) );
 	sockAddr.sin_family	= AF_INET;
 	sockAddr.sin_port	= htons( port );
 	sockAddr.sin_addr	= *(IN_ADDR*)(hostEntry->h_addr_list[0]);
 
-	/* ê⁄ë± */
+	/* Êé•Á∂ö */
 	int32_t ret = ::connect( socket_, (SOCKADDR*)(&sockAddr), sizeof(SOCKADDR_IN) );
 	if ( ret == SocketError )
 	{
@@ -315,3 +260,5 @@ bool ClientImplemented::IsConnected()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
+#endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )

@@ -16,7 +16,7 @@ namespace Effekseer.GUI
 	{
 		public static void Regist()
 		{
-			Action<Action> regist = (f) =>
+			Action<Func<bool>> regist = (f) =>
 				{
 					var attributes = f.Method.GetCustomAttributes(false);
 					var uniquename = UniqueNameAttribute.GetUniqueName(attributes);
@@ -48,10 +48,9 @@ namespace Effekseer.GUI
 			regist(RemoveNode);
 		}
 
-		[Name(value = "新規", language = Language.Japanese)]
-		[Name(value = "New Project", language = Language.English)]
+        [Name(value = "InternalNew")]  // 新規
 		[UniqueName(value = "Internal.New")]
-		public static void New()
+		public static bool New()
 		{
 			if (SaveOnDisposing())
 			{
@@ -59,21 +58,22 @@ namespace Effekseer.GUI
 			}
 			else
 			{
-				return;
+				return true;
 			}
 
 			Core.New();
+
+			return true;
 		}
 
-		[Name(value = "開く", language = Language.Japanese)]
-		[Name(value = "Open", language = Language.English)]
+        [Name(value = "InternalOpen")]  // 開く
 		[UniqueName(value = "Internal.Open")]
-		public static void Open()
+		public static bool Open()
 		{
 			OpenFileDialog ofd = new OpenFileDialog();
 
 			ofd.InitialDirectory = System.IO.Directory.GetCurrentDirectory();
-			ofd.Filter = "エフェクトプロジェクト (*.efkproj)|*.efkproj";
+            ofd.Filter = Properties.Resources.ProjectFilter;			
 			ofd.FilterIndex = 2;
 			ofd.Multiselect = false;
 
@@ -81,29 +81,17 @@ namespace Effekseer.GUI
 			{
 				Open(ofd.FileName);
 			}
-			else
-			{
-				return;
-			}
+
+			return true;
 		}
 
 		/// <summary>
 		/// ファイルを開く
 		/// </summary>
 		/// <param name="fullPath">絶対パス</param>
-		public static void Open(string fullPath)
+		public static bool Open(string fullPath)
 		{
-			var errorText = string.Empty;
-			if(Core.Language == Language.Japanese)
-			{
-				errorText = "絶対パスでありません。";
-			}
-			else if (Core.Language == Language.English)
-			{
-				errorText = "This is not an absolute path.";
-			}
-
-			if (System.IO.Path.GetFullPath(fullPath) != fullPath) throw new Exception(errorText);
+			if (System.IO.Path.GetFullPath(fullPath) != fullPath) throw new Exception(Properties.Resources.NotAbsolutePathError);
 
 			if (SaveOnDisposing())
 			{
@@ -111,7 +99,7 @@ namespace Effekseer.GUI
 			}
 			else
 			{
-				return;
+				return true;
 			}
 			
 			try
@@ -127,12 +115,13 @@ namespace Effekseer.GUI
 			}
 
 			System.IO.Directory.SetCurrentDirectory(System.IO.Path.GetDirectoryName(fullPath));
+
+			return true;
 		}
 
-		[Name(value = "上書き保存", language = Language.Japanese)]
-		[Name(value = "Save", language = Language.English)]
+        [Name(value = "InternalOverwrite")] // 上書き保存
 		[UniqueName(value = "Internal.Overwrite")]
-		public static void Overwrite()
+		public static bool Overwrite()
 		{
 			if (!System.IO.File.Exists(Core.FullPath))
 			{
@@ -147,17 +136,18 @@ namespace Effekseer.GUI
 					GUIManager.Network.Send();
 				}
 			}
+
+			return true;
 		}
 
-		[Name(value = "名前をつけて保存", language = Language.Japanese)]
-		[Name(value = "Save as...", language = Language.English)]
+        [Name(value = "InternalSaveAs")] // 名前をつけて保存
 		[UniqueName(value = "Internal.SaveAs")]
-		public static void SaveAs()
+		public static bool SaveAs()
 		{
 			SaveFileDialog ofd = new SaveFileDialog();
 
 			ofd.InitialDirectory = System.IO.Directory.GetCurrentDirectory();
-			ofd.Filter = "エフェクトプロジェクト (*.efkproj)|*.efkproj";
+            ofd.Filter = Properties.Resources.ProjectFilter;
 			ofd.FilterIndex = 2;
 			ofd.OverwritePrompt = true;
 
@@ -174,26 +164,21 @@ namespace Effekseer.GUI
 					GUIManager.Network.Send();
 				}
 			}
-			else
-			{
-				return;
-			}
 
-			
+			return true;
 		}
 
-		[Name(value = "終了", language = Language.Japanese)]
-		[Name(value = "Exit", language = Language.English)]
+        [Name(value = "InternalExit")] // 終了
 		[UniqueName(value = "Internal.Exit")]
-		public static void Exit()
+		public static bool Exit()
 		{
 			GUIManager.Close();
+			return true;
 		}
 
-		[Name(value = "再生・一時停止", language = Language.Japanese)]
-		[Name(value = "Pause/Resume", language = Language.English)]
+        [Name(value = "InternalPauseOrResume")] // 再生・一時停止
 		[UniqueName(value = "Internal.PlayViewer")]
-		public static void Play()
+		public static bool Play()
 		{
 			if (GUIManager.DockViewer.IsPlaying && !GUIManager.DockViewer.IsPaused)
 			{
@@ -210,66 +195,75 @@ namespace Effekseer.GUI
 					GUIManager.DockViewer.PlayViewer();
 				}
 			}
+
+			return true;
 		}
 
-		[Name(value = "停止", language = Language.Japanese)]
-		[Name(value = "Stop", language = Language.English)]
+        [Name(value = "InternalStop")]  // 停止
 		[UniqueName(value = "Internal.StopViewer")]
-		public static void Stop()
+		public static bool Stop()
 		{
 			GUIManager.DockViewer.StopViewer();
+			return true;
 		}
 
-		[Name(value = "ステップ", language = Language.Japanese)]
-		[Name(value = "Step", language = Language.English)]
+        [Name(value = "InternalStep")]  // ステップ
 		[UniqueName(value = "Internal.StepViewer")]
-		public static void Step()
+		public static bool Step()
 		{
 			GUIManager.DockViewer.StepViewer(false);
+			return true;
 		}
 
-		[Name(value = "ステップ(後)", language = Language.Japanese)]
-		[Name(value = "Step(Back)", language = Language.English)]
+        [Name(value = "InternalBaskStep")] // ステップ(後)
 		[UniqueName(value = "Internal.BackStepViewer")]
-		public static void BackStep()
+		public static bool BackStep()
 		{
 			GUIManager.DockViewer.BackStepViewer();
+			return true;
 		}
 
-		[Name(value="元に戻す", language= Language.Japanese)]
-		[Name(value = "Undo", language = Language.English)]
+        [Name(value = "InternalUndo")]  // 元に戻す
 		[UniqueName(value="Internal.Undo")]
-		public static void Undo()
+		public static bool Undo()
 		{
 			Command.CommandManager.Undo();
+			return true;
 		}
 
-		[Name(value = "やり直し", language = Language.Japanese)]
-		[Name(value = "Redo", language = Language.English)]
+        [Name(value = "InternalRedo")]  // やり直し
 		[UniqueName(value = "Internal.Redo")]
-		public static void Redo()
+		public static bool Redo()
 		{
 			Command.CommandManager.Redo();
+			return true;
 		}
 
-		[Name(value = "ノードのコピー", language = Language.Japanese)]
-		[Name(value = "Copy Node", language = Language.English)]
+        [Name(value = "InternalCopy")] // ノードのコピー
 		[UniqueName(value = "Internal.Copy")]
-		public static void Copy()
+		public static bool Copy()
 		{
+			if (GUIManager.DockNodeTreeView == null) return false;
+			if (!GUIManager.DockNodeTreeView.NodeTreeView.Focused) return false;
+
 			if(Core.SelectedNode != null)
 			{
 				var data = Core.Copy(Core.SelectedNode);
 				Clipboard.Clear();
 				Clipboard.SetText(data);
+				return true;
 			}
+
+			return false;
 		}
 
-		[Name(value = "ノードの貼り付け", language = Language.Japanese)]
-		[Name(value = "Paste Node", language = Language.English)]
+        [Name(value = "InternalPaste")] // ノードの貼り付け
 		[UniqueName(value = "Internal.Paste")]
-		public static void Paste()
+		public static bool Paste()
 		{
+			if (GUIManager.DockNodeTreeView == null) return false;
+			if (!GUIManager.DockNodeTreeView.NodeTreeView.Focused) return false;
+
 			if (Core.SelectedNode != null)
 			{
 				var data = System.Windows.Forms.Clipboard.GetText();
@@ -283,25 +277,33 @@ namespace Effekseer.GUI
 					Core.Paste(node, data);
 					Command.CommandManager.EndCollection();
 				}
+
+				return true;
 			}
+
+			return false;
 		}
 
-		[Name(value = "ノード情報の貼り付け", language = Language.Japanese)]
-		[Name(value = "Paste Node Info", language = Language.English)]
+        [Name(value = "InternalPasteInfo")] // ノード情報の貼り付け
 		[UniqueName(value = "Internal.PasteInfo")]
-		public static void PasteInfo()
+		public static bool PasteInfo()
 		{
+			if (GUIManager.DockNodeTreeView == null) return false;
+			if (!GUIManager.DockNodeTreeView.NodeTreeView.Focused) return false;
+
 			if (Core.SelectedNode != null)
 			{
 				var data = System.Windows.Forms.Clipboard.GetText();
 				Core.Paste(Core.SelectedNode, data);
+				return true;
 			}
+
+			return false;
 		}
 
-		[Name(value = "ノードの追加", language = Language.Japanese)]
-		[Name(value = "Add Node", language = Language.English)]
+        [Name(value = "InternalAddNode")] // ノードの追加
 		[UniqueName(value = "Internal.AddNode")]
-		public static void AddNode()
+		public static bool AddNode()
 		{
 			var selected = Core.SelectedNode;
 
@@ -309,12 +311,13 @@ namespace Effekseer.GUI
 			{
 				selected.AddChild();
 			}
+
+			return true;
 		}
 
-		[Name(value = "ノードの挿入", language = Language.Japanese)]
-		[Name(value = "Insert Node", language = Language.English)]
+        [Name(value = "InternalInsertNode")] // ノードの挿入
 		[UniqueName(value = "Internal.InsertNode")]
-		public static void InsertNode()
+		public static bool InsertNode()
 		{
 			var selected = Core.SelectedNode;
 
@@ -322,12 +325,13 @@ namespace Effekseer.GUI
 			{
 				selected.InsertParent();
 			}
+
+			return true;
 		}
 
-		[Name(value = "ノードの削除", language = Language.Japanese)]
-		[Name(value = "Delete Node", language = Language.English)]
+        [Name(value = "InternalRemoveNode")] // ノードの削除
 		[UniqueName(value = "Internal.RemoveNode")]
-		public static void RemoveNode()
+		public static bool RemoveNode()
 		{
 			var selected = Core.SelectedNode;
 
@@ -335,6 +339,8 @@ namespace Effekseer.GUI
 			{
 				selected.Parent.RemoveChild(selected as Data.Node);
 			}
+
+			return true;
 		}
 
 		/// <summary>
@@ -345,11 +351,7 @@ namespace Effekseer.GUI
 		{
 			if (Core.IsChanged)
 			{
-				var format = "[{0}] は変更されています。保存しますか？";
-				if(Core.Language == Language.English)
-				{
-					format = "[{0}] has been changed. Do you want to save?";
-				}
+                var format = Properties.Resources.ConfirmSaveChanged;
 
 				var result = MessageBox.Show(
 					string.Format(format,System.IO.Path.GetFileName(Core.FullPath)),
@@ -368,17 +370,7 @@ namespace Effekseer.GUI
 
 						ofd.InitialDirectory = System.IO.Directory.GetCurrentDirectory();
 
-						string filter = string.Empty;
-						if (Core.Language == Language.Japanese)
-						{
-							filter = "エフェクトプロジェクト (*.efkproj)|*.efkproj";
-						}
-						else if (Core.Language == Language.English)
-						{
-							filter = "Effekseer Project (*.efkproj)|*.efkproj";
-						}
-
-						ofd.Filter = filter;
+                        ofd.Filter = Properties.Resources.ProjectFilter;
 						ofd.FilterIndex = 2;
 						ofd.OverwritePrompt = true;
 
@@ -410,34 +402,40 @@ namespace Effekseer.GUI
 		/// ヘルプを表示
 		/// </summary>
 		/// <returns></returns>
-		[Name(value = "ヘルプを表示", language = Language.Japanese)]
-		[Name(value = "Manual", language = Language.English)]
+        [Name(value = "InternalViewHelp")] // ヘルプを表示
 		[UniqueName(value = "Internal.ViewHelp")]
-		static public void ViewHelp()
+		static public bool ViewHelp()
 		{
 			string rootDir = Path.GetDirectoryName(GUIManager.GetEntryDirectory());
-			string helpPath = Path.Combine(rootDir, @"Help\index.html");
-			if (File.Exists(helpPath))
+			string helpPath = Path.Combine(rootDir, @"Help\index_en.html");
+
+            if(Core.Language == Language.Japanese)
+            {
+                helpPath = Path.Combine(rootDir, @"Help\index_ja.html");
+            }
+
+            if (File.Exists(helpPath))
 			{
 				Process.Start(helpPath);
 			}
+
+			return true;
 		}
 		
 		/// <summary>
 		/// サンプルを開く
 		/// </summary>
 		/// <returns></returns>
-		[Name(value = "サンプルを開く", language = Language.Japanese)]
-		[Name(value = "Open Sample Project", language = Language.English)]
+        [Name(value = "InternalOpenSample")] // サンプルを開く
 		[UniqueName(value = "Internal.OpenSample")]
-		static public void OpenSample()
+		static public bool OpenSample()
 		{
 			string rootDir = Path.GetDirectoryName(GUIManager.GetEntryDirectory());
 
 			OpenFileDialog ofd = new OpenFileDialog();
 
 			ofd.InitialDirectory = Path.Combine(rootDir, @"Sample");
-			ofd.Filter = "エフェクトプロジェクト (*.efkproj)|*.efkproj";
+            ofd.Filter = Properties.Resources.ProjectFilter;
 			ofd.FilterIndex = 2;
 			ofd.Multiselect = false;
 
@@ -445,22 +443,20 @@ namespace Effekseer.GUI
 			{
 				Open(ofd.FileName);
 			}
-			else
-			{
-				return;
-			}
+
+			return true;
 		}
 
 		/// <summary>
 		/// Effekseerについて
 		/// </summary>
 		/// <returns></returns>
-		[Name(value = "Effekseerについて", language = Language.Japanese)]
-		[Name(value = "About Effekseer", language = Language.English)]
+        [Name(value = "InternalAbout")] // Effekseerについて
 		[UniqueName(value = "Internal.About")]
-		static public void About()
+		static public bool About()
 		{
 			GUIManager.AboutForm.ShowDialog();
+			return true;
 		}
 	}
 }

@@ -1,6 +1,8 @@
-
+Ôªø
 #ifndef	__EFFEKSEER_SERVER_IMPLEMENTED_H__
 #define	__EFFEKSEER_SERVER_IMPLEMENTED_H__
+
+#if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
 
 //----------------------------------------------------------------------------------
 // Include
@@ -77,7 +79,7 @@ public:
 	virtual ~ServerImplemented();
 
 	/**
-		@brief	ÉTÅ[ÉoÅ[ÇäJénÇ∑ÇÈÅB
+		@brief	„Çµ„Éº„Éê„Éº„ÇíÈñãÂßã„Åô„Çã„ÄÇ
 	*/
 	bool Start( uint16_t port );
 
@@ -99,4 +101,7 @@ public:
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
+#endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+
 #endif	// __EFFEKSEER_SERVER_IMPLEMENTED_H__

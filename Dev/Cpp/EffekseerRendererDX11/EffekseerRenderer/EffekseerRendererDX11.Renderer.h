@@ -1,4 +1,4 @@
-
+ï»¿
 #ifndef	__EFFEKSEERRENDERER_DX11_RENDERER_H__
 #define	__EFFEKSEERRENDERER_DX11_RENDERER_H__
 
@@ -16,8 +16,20 @@ namespace EffekseerRendererDX11
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
 /**
-	@brief	•`‰æƒNƒ‰ƒX
+@brief	ãƒ†ã‚¯ã‚¹ãƒãƒ£èª­è¾¼ã‚¯ãƒ©ã‚¹ã‚’ç”Ÿæˆã™ã‚‹ã€‚
+*/
+::Effekseer::TextureLoader* CreateTextureLoader(ID3D11Device* device, ::Effekseer::FileInterface* fileInterface = NULL);
+
+/**
+@brief	ãƒ¢ãƒ‡ãƒ«èª­è¾¼ã‚¯ãƒ©ã‚¹ã‚’ç”Ÿæˆã™ã‚‹ã€‚
+*/
+::Effekseer::ModelLoader* CreateModelLoader(ID3D11Device* device, ::Effekseer::FileInterface* fileInterface = NULL);
+
+
+/**
+	@brief	æç”»ã‚¯ãƒ©ã‚¹
 */
 class Renderer
 	: public ::EffekseerRenderer::Renderer
@@ -28,25 +40,33 @@ protected:
 
 public:
 	/**
-		@brief	ƒCƒ“ƒXƒ^ƒ“ƒX‚ğ¶¬‚·‚éB
-		@param	device	[in]	DirectX‚ÌƒfƒoƒCƒX
-		@param	squareMaxCount	[in]	Å‘å•`‰æƒXƒvƒ‰ƒCƒg”
-		@return	ƒCƒ“ƒXƒ^ƒ“ƒX
+		@brief	ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’ç”Ÿæˆã™ã‚‹ã€‚
+		@param	device		DirectXã®ãƒ‡ãƒã‚¤ã‚¹
+		@param	context		DirectXã®ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆ
+		@param	squareMaxCount	æœ€å¤§æç”»ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆæ•°
+		@param	depthFunc	å¥¥è¡Œãã®è¨ˆç®—æ–¹æ³•
+		@return	ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹
 	*/
-	static Renderer* Create( ID3D11Device* device, ID3D11DeviceContext* context, int32_t squareMaxCount );
+	static Renderer* Create(
+		ID3D11Device* device, 
+		ID3D11DeviceContext* context, 
+		int32_t squareMaxCount, 
+		D3D11_COMPARISON_FUNC depthFunc = D3D11_COMPARISON_LESS);
 
 	/**
-		@brief	ƒfƒoƒCƒX‚ğæ“¾‚·‚éB
+		@brief	ãƒ‡ãƒã‚¤ã‚¹ã‚’å–å¾—ã™ã‚‹ã€‚
 	*/
 	virtual ID3D11Device* GetDevice() = 0;
 
 	/**
-	@brief	”wŒi‚ğæ“¾‚·‚éB
+		@brief	\~English	Get background
+				\~Japanese	èƒŒæ™¯ã‚’å–å¾—ã™ã‚‹
 	*/
-	virtual ID3D11ShaderResourceView* GetBackground() = 0;
+	virtual Effekseer::TextureData* GetBackground() = 0;
 
 	/**
-	@brief	”wŒi‚ğİ’è‚·‚éB
+		@brief	\~English	Set background
+				\~Japanese	èƒŒæ™¯ã‚’è¨­å®šã™ã‚‹
 	*/
 	virtual void SetBackground(ID3D11ShaderResourceView* background) = 0;
 };
@@ -55,35 +75,53 @@ public:
 //
 //----------------------------------------------------------------------------------
 /**
-	@brief	ƒ‚ƒfƒ‹
+@brief	\~English	Model
+		\~Japanese	ãƒ¢ãƒ‡ãƒ«
 */
-class Model : public Effekseer::Model
+class Model 
+	: public Effekseer::Model
 {
 private:
 
 public:
-	ID3D11Buffer*		VertexBuffer;
-	ID3D11Buffer*		IndexBuffer;
-	int32_t				VertexCount;
-	int32_t				IndexCount;
-	int32_t				FaceCount;
-	int32_t				ModelCount;
+
+	struct InternalModel
+	{
+		ID3D11Buffer*		VertexBuffer;
+		ID3D11Buffer*		IndexBuffer;
+		int32_t				VertexCount;
+		int32_t				IndexCount;
+		int32_t				FaceCount;
+
+		InternalModel()
+		{
+			VertexBuffer = nullptr;
+			IndexBuffer = nullptr;
+			VertexCount = 0;
+			IndexCount = 0;
+			FaceCount = 0;
+		}
+
+		virtual ~InternalModel()
+		{
+			ES_SAFE_RELEASE(VertexBuffer);
+			ES_SAFE_RELEASE(IndexBuffer);
+		}
+	};
+
+	InternalModel*				InternalModels = nullptr;
+	int32_t						ModelCount;
 
 	Model( uint8_t* data, int32_t size )
 		: Effekseer::Model	( data, size )
-		, VertexBuffer	( NULL )
-		, IndexBuffer	( NULL )
-		, VertexCount		( 0 )
-		, IndexCount		( 0 )
-		, FaceCount			( 0 )
-		, ModelCount		( 0 )
+		, InternalModels(nullptr)
+		, ModelCount(0)
 	{
 	}
 
 	virtual ~Model()
 	{
-		ES_SAFE_RELEASE( VertexBuffer );
-		ES_SAFE_RELEASE( IndexBuffer );
+		ES_SAFE_DELETE_ARRAY(InternalModels);
 	}
 };
 

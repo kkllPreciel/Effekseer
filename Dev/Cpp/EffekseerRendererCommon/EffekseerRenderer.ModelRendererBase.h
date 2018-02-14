@@ -1,4 +1,4 @@
-
+ï»¿
 #ifndef	__EFFEKSEERRENDERER_MODEL_RENDERER_BASE_H__
 #define	__EFFEKSEERRENDERER_MODEL_RENDERER_BASE_H__
 
@@ -54,6 +54,7 @@ protected:
 	std::vector<Effekseer::Matrix44>	m_matrixes;
 	std::vector<Effekseer::RectF>		m_uv;
 	std::vector<Effekseer::Color>		m_colors;
+	std::vector<int32_t>				m_times;
 
 	void ColorToFloat4(::Effekseer::Color color, float fc[4])
 	{
@@ -71,10 +72,13 @@ protected:
 		fc[3] = 1.0f;
 	}
 
-	ModelRendererBase();
+	ModelRendererBase()
+	{
+	}
+
 public:
 
-	virtual ~ModelRendererBase();
+	virtual ~ModelRendererBase() {}
 
 	template<typename RENDERER>
 	void BeginRendering_(RENDERER* renderer, const efkModelNodeParam& parameter, int32_t count, void* userData)
@@ -82,13 +86,152 @@ public:
 		m_matrixes.clear();
 		m_uv.clear();
 		m_colors.clear();
+		m_times.clear();
 
 		renderer->GetStandardRenderer()->ResetAndRenderingIfRequired();
 	}
 
-	void Rendering( const efkModelNodeParam& parameter, const efkModelInstanceParam& instanceParameter, void* userData );
+	template<typename RENDERER>
+	void Rendering_(RENDERER* renderer, const efkModelNodeParam& parameter, const efkModelInstanceParam& instanceParameter, void* userData)
+	{
+		auto camera = renderer->GetCameraMatrix();
+		::Effekseer::BillboardType btype = parameter.Billboard;
+		Effekseer::Matrix44 mat44;
 
-	template<typename RENDERER, typename SHADER, typename TEXTURE, typename MODEL, bool Instancing, int InstanceCount>
+		if (btype == ::Effekseer::BillboardType::Billboard ||
+			btype == ::Effekseer::BillboardType::RotatedBillboard ||
+			btype == ::Effekseer::BillboardType::YAxisFixed)
+		{
+			const ::Effekseer::Matrix43& mat = instanceParameter.SRTMatrix43;
+			::Effekseer::Vector3D s;
+			::Effekseer::Matrix43 r;
+			::Effekseer::Vector3D t;
+			mat.GetSRT(s, r, t);
+
+			::Effekseer::Vector3D F;
+			::Effekseer::Vector3D R;
+			::Effekseer::Vector3D U;
+
+			if (btype == ::Effekseer::BillboardType::Billboard)
+			{
+				::Effekseer::Vector3D Up(0.0f, 1.0f, 0.0f);
+
+				::Effekseer::Vector3D::Normal(F, ::Effekseer::Vector3D(-camera.Values[0][2], -camera.Values[1][2], -camera.Values[2][2]));
+
+				::Effekseer::Vector3D::Normal(R, ::Effekseer::Vector3D::Cross(R, Up, F));
+				::Effekseer::Vector3D::Normal(U, ::Effekseer::Vector3D::Cross(U, F, R));
+			}
+			else if (btype == ::Effekseer::BillboardType::RotatedBillboard)
+			{
+				::Effekseer::Vector3D Up(0.0f, 1.0f, 0.0f);
+
+				::Effekseer::Vector3D::Normal(F, ::Effekseer::Vector3D(-camera.Values[0][2], -camera.Values[1][2], -camera.Values[2][2]));
+
+				::Effekseer::Vector3D::Normal(R, ::Effekseer::Vector3D::Cross(R, Up, F));
+				::Effekseer::Vector3D::Normal(U, ::Effekseer::Vector3D::Cross(U, F, R));
+
+				float c_zx = sqrt(1.0f - r.Value[2][1] * r.Value[2][1]);
+				float s_z = 0.0f;
+				float c_z = 0.0f;
+
+				if (fabsf(c_zx) > 0.05f)
+				{
+					s_z = -r.Value[0][1] / c_zx;
+					c_z = sqrt(1.0f - s_z * s_z);
+					if (r.Value[1][1] < 0.0f) c_z = -c_z;
+				}
+				else
+				{
+					s_z = 0.0f;
+					c_z = 1.0f;
+				}
+
+				::Effekseer::Vector3D r_temp = R;
+				::Effekseer::Vector3D u_temp = U;
+
+				R.X = r_temp.X * c_z + u_temp.X * s_z;
+				R.Y = r_temp.Y * c_z + u_temp.Y * s_z;
+				R.Z = r_temp.Z * c_z + u_temp.Z * s_z;
+
+				U.X = u_temp.X * c_z - r_temp.X * s_z;
+				U.Y = u_temp.Y * c_z - r_temp.Y * s_z;
+				U.Z = u_temp.Z * c_z - r_temp.Z * s_z;
+			}
+			else if (btype == ::Effekseer::BillboardType::YAxisFixed)
+			{
+				U = ::Effekseer::Vector3D(r.Value[1][0], r.Value[1][1], r.Value[1][2]);
+
+				::Effekseer::Vector3D::Normal(F, ::Effekseer::Vector3D(-camera.Values[0][2], -camera.Values[1][2], -camera.Values[2][2]));
+
+				::Effekseer::Vector3D::Normal(R, ::Effekseer::Vector3D::Cross(R, U, F));
+				::Effekseer::Vector3D::Normal(F, ::Effekseer::Vector3D::Cross(F, R, U));
+			}
+
+			::Effekseer::Matrix43 mat_rot;
+
+			mat_rot.Value[0][0] = -R.X;
+			mat_rot.Value[0][1] = -R.Y;
+			mat_rot.Value[0][2] = -R.Z;
+			mat_rot.Value[1][0] = U.X;
+			mat_rot.Value[1][1] = U.Y;
+			mat_rot.Value[1][2] = U.Z;
+			mat_rot.Value[2][0] = F.X;
+			mat_rot.Value[2][1] = F.Y;
+			mat_rot.Value[2][2] = F.Z;
+			mat_rot.Value[3][0] = t.X;
+			mat_rot.Value[3][1] = t.Y;
+			mat_rot.Value[3][2] = t.Z;
+
+			::Effekseer::Matrix43 mat_scale;
+			mat_scale.Scaling(s.X, s.Y, s.Z);
+			::Effekseer::Matrix43::Multiple(mat_rot, mat_scale, mat_rot);
+
+			for (int32_t r = 0; r < 4; r++)
+			{
+				for (int32_t c = 0; c < 3; c++)
+				{
+					mat44.Values[r][c] = mat_rot.Value[r][c];
+				}
+			}
+		}
+		else if (btype == ::Effekseer::BillboardType::Fixed)
+		{
+			for (int32_t r = 0; r < 4; r++)
+			{
+				for (int32_t c = 0; c < 3; c++)
+				{
+					mat44.Values[r][c] = instanceParameter.SRTMatrix43.Value[r][c];
+				}
+			}
+		}
+
+		if (parameter.Magnification != 1.0f)
+		{
+			Effekseer::Matrix44 mat_scale;
+			mat_scale.Values[0][0] = parameter.Magnification;
+			mat_scale.Values[1][1] = parameter.Magnification;
+			mat_scale.Values[2][2] = parameter.Magnification;
+
+			Effekseer::Matrix44::Mul(mat44, mat_scale, mat44);
+		}
+
+		if (!parameter.IsRightHand)
+		{
+			Effekseer::Matrix44 mat_scale;
+			mat_scale.Values[0][0] = 1.0f;
+			mat_scale.Values[1][1] = 1.0f;
+			mat_scale.Values[2][2] = -1.0f;
+
+			Effekseer::Matrix44::Mul(mat44, mat_scale, mat44);
+		}
+
+		m_matrixes.push_back(mat44);
+		m_uv.push_back(instanceParameter.UV);
+		m_colors.push_back(instanceParameter.AllColor);
+		m_times.push_back(instanceParameter.Time);
+	}
+
+	template<typename RENDERER, typename SHADER, typename MODEL, bool Instancing, int InstanceCount>
 	void EndRendering_(
 		RENDERER* renderer, 
 		SHADER* shader_lighting_texture_normal,
@@ -104,6 +247,8 @@ public:
 		if (m_matrixes.size() == 0) return;
 		if (param.ModelIndex < 0) return;
 
+		auto camera = renderer->GetCameraMatrix();
+
 		MODEL* model = (MODEL*) param.EffectPointer->GetModel(param.ModelIndex);
 		if (model == NULL) return;
 		
@@ -115,7 +260,10 @@ public:
 			auto callback = renderer->GetDistortingCallback();
 			if (callback != nullptr)
 			{
-				callback->OnDistorting();
+				if (!callback->OnDistorting())
+				{
+					return;
+				}
 			}
 		}
 
@@ -125,7 +273,7 @@ public:
 		state.AlphaBlend = param.AlphaBlend;
 		state.CullingType = param.Culling;
 
-		/*ƒVƒF[ƒ_[‘I‘ð*/
+		/*ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼é¸æŠž*/
 		SHADER* shader_ = NULL;
 		if (distortion)
 		{
@@ -177,16 +325,16 @@ public:
 
 		renderer->BeginShader(shader_);
 
-		/*ƒeƒNƒXƒ`ƒƒ‘I‘ð*/
-		TEXTURE textures[2];
-		textures[0] = (TEXTURE)NULL;
-		textures[1] = (TEXTURE)NULL;
+		// Select texture
+		Effekseer::TextureData* textures[2];
+		textures[0] = nullptr;
+		textures[1] = nullptr;
 
 		if (distortion)
 		{
 			if (param.ColorTextureIndex >= 0)
 			{
-				textures[0] = TexturePointerToTexture<TEXTURE>(param.EffectPointer->GetDistortionImage(param.ColorTextureIndex));
+				textures[0] = param.EffectPointer->GetDistortionImage(param.ColorTextureIndex);
 			}
 
 			textures[1] = renderer->GetBackground();
@@ -195,12 +343,12 @@ public:
 		{
 			if (param.ColorTextureIndex >= 0)
 			{
-				textures[0] = TexturePointerToTexture<TEXTURE>(param.EffectPointer->GetColorImage(param.ColorTextureIndex));
+				textures[0] = param.EffectPointer->GetColorImage(param.ColorTextureIndex);
 			}
 
 			if (param.NormalTextureIndex >= 0)
 			{
-				textures[1] = TexturePointerToTexture<TEXTURE>(param.EffectPointer->GetNormalImage(param.NormalTextureIndex));
+				textures[1] = param.EffectPointer->GetNormalImage(param.NormalTextureIndex);
 			}
 		}
 		
@@ -225,7 +373,7 @@ public:
 		{
 			ModelRendererPixelConstantBuffer* pcb = (ModelRendererPixelConstantBuffer*) shader_->GetPixelConstantBuffer();
 
-			// ŒÅ’è’lÝ’è
+			// å›ºå®šå€¤è¨­å®š
 			if (param.Lighting)
 			{
 				{
@@ -249,11 +397,27 @@ public:
 		
 		vcb->CameraMatrix = renderer->GetCameraProjectionMatrix();
 
-		if(Instancing)
+		// Check time
+		auto stTime = m_times[0] % model->GetFrameCount();
+		auto isTimeSame = true;
+
+		for (auto t : m_times)
 		{
-			/* ƒoƒbƒtƒ@‚ÌÝ’è‚ÌŒã‚ÉƒŒƒCƒAƒEƒg‚ðÝ’è‚µ‚È‚¢‚Æ–³Œø */
-			renderer->SetVertexBuffer(model->VertexBuffer, sizeof(Effekseer::Model::VertexWithIndex));
-			renderer->SetIndexBuffer(model->IndexBuffer);
+			t = t % model->GetFrameCount();
+			if(t != stTime)
+			{
+				isTimeSame = false;
+				break;
+			}
+		}
+
+		if(Instancing && isTimeSame)
+		{
+			auto& imodel = model->InternalModels[stTime];
+
+			// Invalid unless layout is set after buffer
+			renderer->SetVertexBuffer(imodel.VertexBuffer, sizeof(Effekseer::Model::VertexWithIndex));
+			renderer->SetIndexBuffer(imodel.IndexBuffer);
 			renderer->SetLayout(shader_);
 
 			for( size_t loop = 0; loop < m_matrixes.size(); )
@@ -264,6 +428,9 @@ public:
 				{
 					vcb->ModelMatrix[num] = m_matrixes[loop+num];
 
+					// DepthOffset
+					ApplyDepthOffset(vcb->ModelMatrix[num], camera, param.DepthOffset, param.IsDepthOffsetScaledWithCamera, param.IsDepthOffsetScaledWithParticleScale, param.IsRightHand);
+	
 					vcb->ModelUV[num][0] = m_uv[loop+num].X;
 					vcb->ModelUV[num][1] = m_uv[loop+num].Y;
 					vcb->ModelUV[num][2] = m_uv[loop+num].Width;
@@ -274,29 +441,35 @@ public:
 
 				shader_->SetConstantBuffer();
 
-				renderer->DrawPolygon( model->VertexCount * modelCount, model->IndexCount * modelCount );
+				renderer->DrawPolygon(imodel.VertexCount * modelCount, imodel.IndexCount * modelCount);
 
 				loop += modelCount;
 			}
 		}
 		else
 		{
-			/* ƒoƒbƒtƒ@‚ÌÝ’è‚ÌŒã‚ÉƒŒƒCƒAƒEƒg‚ðÝ’è‚µ‚È‚¢‚Æ–³Œø */
-			renderer->SetVertexBuffer(model->VertexBuffer, sizeof(Effekseer::Model::Vertex));
-			renderer->SetIndexBuffer(model->IndexBuffer);
-			renderer->SetLayout(shader_);
-
 			for( size_t loop = 0; loop < m_matrixes.size(); )
 			{
+				auto stTime = m_times[loop] % model->GetFrameCount();
+				auto& imodel = model->InternalModels[stTime];
+
+				// Invalid unless layout is set after buffer
+				renderer->SetVertexBuffer(imodel.VertexBuffer, sizeof(Effekseer::Model::Vertex));
+				renderer->SetIndexBuffer(imodel.IndexBuffer);
+				renderer->SetLayout(shader_);
+
 				vcb->ModelMatrix[0] = m_matrixes[loop];
 				vcb->ModelUV[0][0] = m_uv[loop].X;
 				vcb->ModelUV[0][1] = m_uv[loop].Y;
 				vcb->ModelUV[0][2] = m_uv[loop].Width;
 				vcb->ModelUV[0][3] = m_uv[loop].Height;
+
+				// DepthOffset
+				ApplyDepthOffset(vcb->ModelMatrix[0], camera, param.DepthOffset, param.IsDepthOffsetScaledWithCamera, param.IsDepthOffsetScaledWithParticleScale, param.IsRightHand);
 				
 				ColorToFloat4( m_colors[loop], vcb->ModelColor[0] );
 				shader_->SetConstantBuffer();
-				renderer->DrawPolygon( model->VertexCount, model->IndexCount );
+				renderer->DrawPolygon(imodel.VertexCount, imodel.IndexCount);
 
 				loop += 1;
 			}

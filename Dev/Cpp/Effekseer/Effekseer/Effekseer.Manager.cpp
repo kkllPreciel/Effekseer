@@ -1,4 +1,4 @@
-
+ï»¿
 
 //----------------------------------------------------------------------------------
 //
@@ -30,12 +30,6 @@
 
 #include "Effekseer.ModelLoader.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <sys/time.h>
-#endif
-
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -57,6 +51,14 @@ static int64_t GetTime(void)
 		}
 	}
 	return 0;
+#elif defined(_PSVITA)
+	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+#elif defined(_PS4)
+	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+#elif defined(_SWITCH)
+	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+#elif defined(_XBOXONE)
+	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 #else
 	struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -81,7 +83,7 @@ Handle ManagerImplemented::AddDrawSet( Effect* effect, InstanceContainer* pInsta
 
 	if( ++m_NextHandle < 0 )
 	{
-		// ƒI[ƒo[ƒtƒ[‚µ‚½‚çƒŠƒZƒbƒg‚·‚é
+		// ã‚ªãƒ¼ãƒãƒ¼ãƒ•ãƒ­ãƒ¼ã—ãŸã‚‰ãƒªã‚»ãƒƒãƒˆã™ã‚‹
 		m_NextHandle = 0;
 	}
 
@@ -100,14 +102,14 @@ Handle ManagerImplemented::AddDrawSet( Effect* effect, InstanceContainer* pInsta
 //----------------------------------------------------------------------------------
 void ManagerImplemented::GCDrawSet( bool isRemovingManager )
 {
-	// ƒCƒ“ƒXƒ^ƒ“ƒXƒOƒ‹[ƒv©‘Ì‚Ìíœˆ—
+	// ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚°ãƒ«ãƒ¼ãƒ—è‡ªä½“ã®å‰Šé™¤å‡¦ç†
 	{
 		std::map<Handle,DrawSet>::iterator it = m_RemovingDrawSets[1].begin();
 		while( it != m_RemovingDrawSets[1].end() )
 		{
 			DrawSet& drawset = (*it).second;
 
-			// ‘S”jŠüˆ—
+			// å…¨ç ´æ£„å‡¦ç†
 			drawset.InstanceContainerPointer->RemoveForcibly( true );
 			drawset.InstanceContainerPointer->~InstanceContainer();
 			InstanceContainer::operator delete( drawset.InstanceContainerPointer, this );
@@ -142,16 +144,16 @@ void ManagerImplemented::GCDrawSet( bool isRemovingManager )
 		{
 			DrawSet& draw_set = (*it).second;
 
-			// íœƒtƒ‰ƒO‚ª—§‚Á‚Ä‚¢‚é
+			// å‰Šé™¤ãƒ•ãƒ©ã‚°ãŒç«‹ã£ã¦ã„ã‚‹æ™‚
 			bool isRemoving = draw_set.IsRemoving;
 
-			// ‰½‚à‘¶İ‚µ‚È‚¢
+			// ä½•ã‚‚å­˜åœ¨ã—ãªã„æ™‚
 			if( !isRemoving && draw_set.GlobalPointer->GetInstanceCount() == 0 )
 			{
 				isRemoving = true;
 			}
 
-			// ƒ‹[ƒg‚Ì‚İ‘¶İ‚µAŠù‚ÉV‚µ‚­¶¬‚·‚éŒ©‚İ‚ª‚È‚¢‚Æ‚«
+			// ãƒ«ãƒ¼ãƒˆã®ã¿å­˜åœ¨ã—ã€æ—¢ã«æ–°ã—ãç”Ÿæˆã™ã‚‹è¦‹è¾¼ã¿ãŒãªã„ã¨ã
 			if( !isRemoving && draw_set.GlobalPointer->GetInstanceCount() == 1 )
 			{
 				InstanceContainer* pRootContainer = draw_set.InstanceContainerPointer;
@@ -166,7 +168,8 @@ void ManagerImplemented::GCDrawSet( bool isRemovingManager )
 						int maxcreate_count = 0;
 						for( int i = 0; i < Min(pRootInstance->m_pEffectNode->GetChildrenCount(), Instance::ChildrenMax); i++ )
 						{
-							auto child = pRootInstance->m_pEffectNode->GetChild(i);
+							auto child = (EffectNodeImplemented*) pRootInstance->m_pEffectNode->GetChild(i);
+
 							float last_generation_time = 
 								child->CommonValues.GenerationTime.max *
 								(child->CommonValues.MaxGeneration - 1) +
@@ -185,7 +188,7 @@ void ManagerImplemented::GCDrawSet( bool isRemovingManager )
 					
 						if( maxcreate_count == pRootInstance->m_pEffectNode->GetChildrenCount() )
 						{
-							// ‰¹‚ªÄ¶’†‚Å‚È‚¢‚Æ‚«
+							// éŸ³ãŒå†ç”Ÿä¸­ã§ãªã„ã¨ã
 							if (!GetSoundPlayer() || !GetSoundPlayer()->CheckPlayingTag(draw_set.GlobalPointer))
 							{
 								isRemoving = true;
@@ -197,7 +200,7 @@ void ManagerImplemented::GCDrawSet( bool isRemovingManager )
 
 			if( isRemoving )
 			{
-				// Á‹ˆ—
+				// æ¶ˆå»å‡¦ç†
 				StopEffect( (*it).first );
 
 				if( (*it).second.RemovingCallback != NULL )
@@ -238,7 +241,7 @@ InstanceContainer* ManagerImplemented::CreateInstanceContainer( EffectNode* pEff
 		Instance* instance = group->CreateInstance();
 		instance->Initialize( NULL, 0 );
 
-		/* ƒCƒ“ƒXƒ^ƒ“ƒX‚ª¶¬‚µ‚½‚í‚¯‚Å‚Í‚È‚¢‚½‚ßfalse‚É•ÏX */
+		/* ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ãŒç”Ÿæˆã—ãŸã‚ã‘ã§ã¯ãªã„ãŸã‚falseã«å¤‰æ›´ */
 		group->IsReferencedFromInstance = false;
 	}
 
@@ -305,8 +308,7 @@ void ManagerImplemented::ExecuteEvents()
 //
 //----------------------------------------------------------------------------------
 ManagerImplemented::ManagerImplemented( int instance_max, bool autoFlip )
-	: m_reference	( 1 )
-	, m_autoFlip	( autoFlip )
+	: m_autoFlip	( autoFlip )
 	, m_NextHandle	( 0 )
 	, m_instance_max	( instance_max )
 	, m_setting			( NULL )
@@ -315,11 +317,6 @@ ManagerImplemented::ManagerImplemented( int instance_max, bool autoFlip )
 	, m_cullingWorld	(NULL)
 	, m_culled(false)
 
-	, m_MallocFunc(NULL)
-	, m_FreeFunc(NULL)
-	, m_randFunc(NULL)
-	, m_randMax(0)
-
 	, m_spriteRenderer(NULL)
 	, m_ribbonRenderer(NULL)
 	, m_ringRenderer(NULL)
@@ -327,13 +324,18 @@ ManagerImplemented::ManagerImplemented( int instance_max, bool autoFlip )
 	, m_trackRenderer(NULL)
 
 	, m_soundPlayer(NULL)
+
+	, m_MallocFunc(NULL)
+	, m_FreeFunc(NULL)
+	, m_randFunc(NULL)
+	, m_randMax(0)
 {
 	m_setting = Setting::Create();
 
 	SetMallocFunc( Malloc );
 	SetFreeFunc( Free );
 	SetRandFunc( Rand );
-	SetRandMax( RAND_MAX );
+	SetRandMax(RAND_MAX);
 
 	m_renderingDrawSets.reserve( 64 );
 
@@ -400,29 +402,6 @@ Instance* ManagerImplemented::PopInstance()
 	Instance* ret = m_reserved_instances.front();
 	m_reserved_instances.pop();
 	return ret;
-}
-
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-int ManagerImplemented::AddRef()
-{
-	m_reference++;
-	return m_reference;
-}
-
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-int ManagerImplemented::Release()
-{
-	m_reference--;
-	int count = m_reference;
-	if ( count == 0 )
-	{
-		delete this;
-	}
-	return count;
 }
 
 //----------------------------------------------------------------------------------
@@ -1030,6 +1009,17 @@ void ManagerImplemented::SetScale( Handle handle, float x, float y, float z )
 	}
 }
 
+void ManagerImplemented::SetAllColor(Handle handle, Color color)
+{
+	if (m_DrawSets.count(handle) > 0)
+	{
+		auto& drawSet = m_DrawSets[handle];
+
+		drawSet.GlobalPointer->IsGlobalColorSet = true;
+		drawSet.GlobalPointer->GlobalColor = color;
+	}
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -1095,9 +1085,16 @@ void ManagerImplemented::SetRemovingCallback( Handle handle, EffectInstanceRemov
 	}
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+bool ManagerImplemented::GetShown(Handle handle)
+{
+	if (m_DrawSets.count(handle) > 0)
+	{
+		return m_DrawSets[handle].IsShown;
+	}
+
+	return false;
+}
+
 void ManagerImplemented::SetShown( Handle handle, bool shown )
 {
 	if( m_DrawSets.count( handle ) > 0 )
@@ -1106,9 +1103,16 @@ void ManagerImplemented::SetShown( Handle handle, bool shown )
 	}
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+bool ManagerImplemented::GetPaused(Handle handle)
+{
+	if (m_DrawSets.count(handle) > 0)
+	{
+		return m_DrawSets[handle].IsPaused;
+	}
+
+	return false;
+}
+
 void ManagerImplemented::SetPaused( Handle handle, bool paused )
 {
 	if( m_DrawSets.count( handle ) > 0 )
@@ -1117,9 +1121,27 @@ void ManagerImplemented::SetPaused( Handle handle, bool paused )
 	}
 }
 
+void ManagerImplemented::SetPausedToAllEffects(bool paused)
+{
+	std::map<Handle, DrawSet>::iterator it = m_DrawSets.begin();
+	while (it != m_DrawSets.end())
+	{
+		(*it).second.IsPaused = paused;
+		++it;
+	}
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+float ManagerImplemented::GetSpeed(Handle handle) const
+{
+	auto it = m_DrawSets.find(handle);
+	if (it == m_DrawSets.end()) return 0.0f;
+	return it->second.Speed;
+}
+
+
 void ManagerImplemented::SetSpeed( Handle handle, float speed )
 {
 	if( m_DrawSets.count( handle ) > 0 )
@@ -1152,13 +1174,13 @@ void ManagerImplemented::Flip()
 
 	ExecuteEvents();
 
-	// DrawSetíœˆ—
+	// DrawSetå‰Šé™¤å‡¦ç†
 	GCDrawSet( false );
 
 	m_renderingDrawSets.clear();
 	m_renderingDrawSetMaps.clear();
 
-	/* ƒJƒŠƒ“ƒO¶¬ */
+	/* ã‚«ãƒªãƒ³ã‚°ç”Ÿæˆ */
 	if( cullingNext.SizeX != cullingCurrent.SizeX ||
 		cullingNext.SizeY != cullingCurrent.SizeY ||
 		cullingNext.SizeZ != cullingCurrent.SizeZ ||
@@ -1293,7 +1315,7 @@ void ManagerImplemented::Update( float deltaFrame )
 {
 	BeginUpdate();
 
-	// ŠJnŠÔ‚ğ‹L˜^
+	// é–‹å§‹æ™‚é–“ã‚’è¨˜éŒ²
 	int64_t beginTime = ::Effekseer::GetTime();
 
 	for( size_t i = 0; i < m_renderingDrawSets.size(); i++ )
@@ -1303,7 +1325,7 @@ void ManagerImplemented::Update( float deltaFrame )
 		UpdateHandle( drawSet, deltaFrame );
 	}
 
-	// Œo‰ßŠÔ‚ğŒvZ
+	// çµŒéæ™‚é–“ã‚’è¨ˆç®—
 	m_updateTime = (int)(Effekseer::GetTime() - beginTime);
 
 	EndUpdate();
@@ -1373,7 +1395,7 @@ void ManagerImplemented::Draw()
 {
 	m_renderingSession.Enter();
 
-	// ŠJnŠÔ‚ğ‹L˜^
+	// é–‹å§‹æ™‚é–“ã‚’è¨˜éŒ²
 	int64_t beginTime = ::Effekseer::GetTime();
 
 	if(m_culled)
@@ -1401,7 +1423,7 @@ void ManagerImplemented::Draw()
 		}
 	}
 
-	// Œo‰ßŠÔ‚ğŒvZ
+	// çµŒéæ™‚é–“ã‚’è¨ˆç®—
 	m_drawTime = (int)(Effekseer::GetTime() - beginTime);
 
 	m_renderingSession.Leave();
@@ -1414,8 +1436,20 @@ Handle ManagerImplemented::Play( Effect* effect, float x, float y, float z )
 {
 	if( effect == NULL ) return -1;
 	
-	// ƒ‹[ƒg¶¬
+	auto e = (EffectImplemented*) effect;
+
+	// Create root
 	InstanceGlobal* pGlobal = new InstanceGlobal();
+
+	if (e->m_defaultRandomSeed >= 0)
+	{
+		pGlobal->SetSeed(e->m_defaultRandomSeed);
+	}
+	else
+	{
+		pGlobal->SetSeed(GetRandFunc()());
+	}
+
 	InstanceContainer* pContainer = CreateInstanceContainer( ((EffectImplemented*)effect)->GetRoot(), pGlobal, true, NULL );
 	
 	pGlobal->SetRootContainer(  pContainer );
@@ -1482,7 +1516,7 @@ void ManagerImplemented::BeginReloadEffect( Effect* effect )
 	{
 		if( (*it).second.ParameterPointer != effect ) continue;
 	
-		/* ƒCƒ“ƒXƒ^ƒ“ƒXíœ */
+		/* ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹å‰Šé™¤ */
 		(*it).second.InstanceContainerPointer->RemoveForcibly( true );
 		(*it).second.InstanceContainerPointer->~InstanceContainer();
 		InstanceContainer::operator delete( (*it).second.InstanceContainerPointer, this );
@@ -1502,15 +1536,15 @@ void ManagerImplemented::EndReloadEffect( Effect* effect )
 	{
 		if( (*it).second.ParameterPointer != effect ) continue;
 
-		/* ƒCƒ“ƒXƒ^ƒ“ƒX¶¬ */
+		/* ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ç”Ÿæˆ */
 		(*it).second.InstanceContainerPointer = CreateInstanceContainer( ((EffectImplemented*)effect)->GetRoot(), (*it).second.GlobalPointer, true, NULL );
 		(*it).second.GlobalPointer->SetRootContainer(  (*it).second.InstanceContainerPointer );
 
-		/* s—ñİ’è */
+		/* è¡Œåˆ—è¨­å®š */
 		(*it).second.InstanceContainerPointer->GetFirstGroup()->GetFirst()->m_GlobalMatrix43 = 
 			(*it).second.GlobalMatrix;
 		
-		/* ƒXƒLƒbƒv */
+		/* ã‚¹ã‚­ãƒƒãƒ— */
 		for( float f = 0; f < (*it).second.GlobalPointer->GetUpdatedFrame() - 1; f+= 1.0f )
 		{
 			(*it).second.InstanceContainerPointer->Update( true, 1.0f, false );

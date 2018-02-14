@@ -19,11 +19,8 @@ namespace Effekseer.GUI
 
 			lp_option.SetType(typeof(Data.OptionValues));
 
-			if (Core.Language == Language.English)
-			{
-				Text = "Options";
-			}
-		}
+            Icon = Icon.FromHandle(((Bitmap)Properties.Resources.IconOption).GetHicon());
+        }
 
 		void Read()
 		{

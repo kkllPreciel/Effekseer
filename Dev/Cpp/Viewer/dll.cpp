@@ -1,4 +1,4 @@
-
+ï»¿
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -8,10 +8,9 @@
 
 #include "dll.h"
 
-#include <d3dx9.h>
+//#include <d3dx9.h>
 
 #pragma comment(lib, "d3d9.lib" )
-#pragma comment(lib, "d3dx9.lib" )
 
 #define NONDLL	1
 #define MSWIN32 1
@@ -271,7 +270,7 @@ static bool									g_mouseSlideDirectionInvY = false;
 //----------------------------------------------------------------------------------
 void SavePNGImage(const wchar_t* filepath, int32_t width, int32_t height, void* data, bool rev)
 {
-	/* \‘¢‘ÌŠm•Û */
+	/* æ§‹é€ ä½“ç¢ºä¿ */
 #if _WIN32
 	FILE *fp = _wfopen(filepath, L"wb");
 #else
@@ -283,14 +282,14 @@ void SavePNGImage(const wchar_t* filepath, int32_t width, int32_t height, void* 
 	png_structp pp = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	png_infop ip = png_create_info_struct(pp);
 
-	/* ‘‚«‚İ€”õ */
+	/* æ›¸ãè¾¼ã¿æº–å‚™ */
 	png_init_io(pp, fp);
 	png_set_IHDR(pp, ip, width, height,
-		8, /* 8bitˆÈŠO‚É‚·‚é‚È‚ç•Ï‚¦‚é */
-		PNG_COLOR_TYPE_RGBA, /* RGBAˆÈŠO‚É‚·‚é‚È‚ç•Ï‚¦‚é */
+		8, /* 8bitä»¥å¤–ã«ã™ã‚‹ãªã‚‰å¤‰ãˆã‚‹ */
+		PNG_COLOR_TYPE_RGBA, /* RGBAä»¥å¤–ã«ã™ã‚‹ãªã‚‰å¤‰ãˆã‚‹ */
 		PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
-	/* ƒsƒNƒZƒ‹—ÌˆæŠm•Û */
+	/* ãƒ”ã‚¯ã‚»ãƒ«é ˜åŸŸç¢ºä¿ */
 	std::vector<png_byte>  raw1D(height * png_get_rowbytes(pp, ip));
 	std::vector<png_bytep> raw2D(height * sizeof(png_bytep));
 	for (int32_t i = 0; i < height; i++)
@@ -300,7 +299,7 @@ void SavePNGImage(const wchar_t* filepath, int32_t width, int32_t height, void* 
 
 	memcpy((void*) raw1D.data(), data, width * height * 4);
 
-	/* ã‰º”½“] */
+	/* ä¸Šä¸‹åè»¢ */
 	if (rev)
 	{
 		for (int32_t i = 0; i < height / 2; i++)
@@ -311,12 +310,12 @@ void SavePNGImage(const wchar_t* filepath, int32_t width, int32_t height, void* 
 		}
 	}
 
-	/* ‘‚«‚İ */
+	/* æ›¸ãè¾¼ã¿ */
 	png_write_info(pp, ip);
 	png_write_image(pp, raw2D.data());
 	png_write_end(pp, ip);
 
-	/* ‰ğ•ú */
+	/* è§£æ”¾ */
 	png_destroy_write_struct(&pp, &ip);
 	fclose(fp);
 }
@@ -338,13 +337,13 @@ bool Combine( const wchar_t* rootPath, const wchar_t* treePath,  wchar_t* dst, i
 		treePathLength++;
 	}
 
-	// —¼•û‚Æ‚à‚È‚µ
+	// ä¸¡æ–¹ã¨ã‚‚ãªã—
 	if( rootPathLength == 0 && treePathLength == 0 )
 	{
 		return false;
 	}
 
-	// •Ğ•û‚È‚µ
+	// ç‰‡æ–¹ãªã—
 	if( rootPathLength == 0 )
 	{
 		if( treePathLength < dst_length )
@@ -371,9 +370,9 @@ bool Combine( const wchar_t* rootPath, const wchar_t* treePath,  wchar_t* dst, i
 		}
 	}
 	
-	// —¼•û‚ ‚è
+	// ä¸¡æ–¹ã‚ã‚Š
 
-	// ƒfƒBƒŒƒNƒgƒŠƒpƒX‚Ü‚Å–ß‚·B
+	// ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªãƒ‘ã‚¹ã¾ã§æˆ»ã™ã€‚
 	int PathPosition = rootPathLength;
 	while( PathPosition > 0 )
 	{
@@ -384,11 +383,11 @@ bool Combine( const wchar_t* rootPath, const wchar_t* treePath,  wchar_t* dst, i
 		PathPosition--;
 	}
 
-	// ƒRƒs[‚·‚é
+	// ã‚³ãƒ”ãƒ¼ã™ã‚‹
 	memcpy( dst, rootPath, sizeof(wchar_t) * PathPosition );
 	dst[ PathPosition ] = 0;
 
-	// –³—‚â‚èŒq‚°‚é
+	// ç„¡ç†ã‚„ã‚Šç¹‹ã’ã‚‹
 	if( PathPosition + treePathLength > dst_length )
 	{
 		return false;
@@ -398,7 +397,7 @@ bool Combine( const wchar_t* rootPath, const wchar_t* treePath,  wchar_t* dst, i
 	PathPosition = PathPosition + treePathLength;
 	dst[ PathPosition ] = 0;
 
-	// ../ ..\ ‚Ìˆ—
+	// ../ ..\ ã®å‡¦ç†
 	for( int i = 0; i < PathPosition - 2; i++ )
 	{
 		if( dst[ i ] == L'.' && dst[ i + 1 ] == L'.' && ( dst[ i + 2 ] == L'/' || dst[ i + 2 ] == L'\\' ) )
@@ -454,6 +453,8 @@ ViewerParamater::ViewerParamater()
 	, CullingY			( 0 )
 	, CullingZ			( 0 )
 
+	, Distortion		( DistortionType::Current )
+
 {
 
 }
@@ -491,6 +492,24 @@ ViewerEffectBehavior::ViewerEffectBehavior()
 
 }
 
+struct HandleHolder
+{
+	::Effekseer::Handle		Handle = 0;
+	int32_t					Time = 0;
+
+	HandleHolder()
+		: Handle(0)
+		, Time(0)
+	{
+	}
+
+	HandleHolder(::Effekseer::Handle handle, int32_t time = 0)
+		: Handle(handle)
+		, Time(time)
+	{
+	}
+};
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -498,10 +517,10 @@ static ::Effekseer::Manager*			g_manager = NULL;
 static ::EffekseerTool::Renderer*		g_renderer = NULL;
 static ::Effekseer::Effect*				g_effect = NULL;
 static ::EffekseerTool::Sound*			g_sound = NULL;
-static std::map<std::wstring,IDirect3DTexture9*> m_textures;
+static std::map<std::wstring, Effekseer::TextureData*> m_textures;
 static std::map<std::wstring,EffekseerRendererDX9::Model*> m_models;
 
-static std::vector<::Effekseer::Handle>	g_handles;
+static std::vector<HandleHolder>	g_handles;
 
 static ::Effekseer::Vector3D	g_focus_position;
 
@@ -510,11 +529,11 @@ static ::Effekseer::Client*		g_client = NULL;
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Native::TextureLoader::TextureLoader(EffekseerRenderer::Renderer* renderer, bool isSRGBMode)
+Native::TextureLoader::TextureLoader(EffekseerRenderer::Renderer* renderer)
 	: m_renderer	( renderer )
-	, m_isSRGBMode(isSRGBMode)
 {
-
+	auto r = (EffekseerRendererDX9::Renderer*)m_renderer;
+	m_originalTextureLoader = EffekseerRendererDX9::CreateTextureLoader(r->GetDevice());
 }
 
 //----------------------------------------------------------------------------------
@@ -522,82 +541,44 @@ Native::TextureLoader::TextureLoader(EffekseerRenderer::Renderer* renderer, bool
 //----------------------------------------------------------------------------------
 Native::TextureLoader::~TextureLoader()
 {
-
+	ES_SAFE_DELETE(m_originalTextureLoader);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void* Native::TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType textureType)
+Effekseer::TextureData* Native::TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType textureType)
 {
 	wchar_t dst[260];
 	Combine( RootPath.c_str(), (const wchar_t *)path, dst, 260 );
 
 	std::wstring key( dst );
-	IDirect3DTexture9* pTexture = NULL;
 
 	if( m_textures.count( key ) > 0 )
 	{
-		pTexture = m_textures[ key ];
+		return m_textures[key];
 	}
 	else
 	{
-		FILE* fp_texture = _wfopen( dst, L"rb" );
-		if( fp_texture != NULL )
+		auto t = m_originalTextureLoader->Load((EFK_CHAR*)dst, textureType);
+		
+		if (t != nullptr)
 		{
-			fseek( fp_texture, 0, SEEK_END );
-			size_t size_texture = ftell( fp_texture );
-			char* data_texture = new char[size_texture];
-			fseek( fp_texture, 0, SEEK_SET );
-			fread( data_texture, 1, size_texture, fp_texture );
-			fclose( fp_texture );
-
-			//D3DXCreateTextureFromFileInMemory( ((EffekseerRendererDX9::RendererImplemented*)m_renderer)->GetDevice(), data_texture, size_texture, &pTexture );
-
-			DWORD usage = 0;
-			if (m_isSRGBMode)
-			{
-				usage = 0;
-			}
-			
-			D3DXCreateTextureFromFileInMemoryEx(
-				((EffekseerRendererDX9::RendererImplemented*)m_renderer)->GetDevice(),
-				data_texture,
-				size_texture,
-				D3DX_DEFAULT,
-				D3DX_DEFAULT,
-				D3DX_DEFAULT,
-				usage,
-				D3DFMT_UNKNOWN,
-				D3DPOOL_MANAGED,
-				D3DX_DEFAULT,
-				D3DX_DEFAULT,
-				0,
-				NULL,
-				NULL,
-				&pTexture);
-
-			delete [] data_texture;
-
-			m_textures[ key ] = pTexture;
+			m_textures[key] = t;
 		}
+
+		return t;
 	}
 
-	return pTexture;
+	return nullptr;
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Native::TextureLoader::Unload( void* data )
+void Native::TextureLoader::Unload(Effekseer::TextureData* data )
 {
-	/*
-	if( data != NULL )
-	{
-		IDirect3DTexture9* texture = (IDirect3DTexture9*)data;
-		texture->Release();
-	}
-	*/
+	//m_originalTextureLoader->Unload(data);
 }
 
 //----------------------------------------------------------------------------------
@@ -664,131 +645,22 @@ void* Native::ModelLoader::Load( const EFK_CHAR* path )
 
 	if( m_models.count( key ) > 0 )
 	{
-		model = m_models[ key ];
+		return m_models[ key ];
 	}
 	else
 	{
+		auto loader = ::EffekseerRendererDX9::CreateModelLoader(m_renderer->GetDevice());
+		auto m = (EffekseerRendererDX9::Model*)loader->Load((const EFK_CHAR*) dst);
 
-		FILE* fp_model = _wfopen( (const wchar_t *)dst, L"rb" );
-
-		if( fp_model != NULL )
+		if (m != nullptr)
 		{
-			HRESULT hr;
-
-			fseek( fp_model, 0, SEEK_END );
-			size_t size_model = ftell( fp_model );
-			uint8_t* data_model = new uint8_t[size_model];
-			fseek( fp_model, 0, SEEK_SET );
-			fread( data_model, 1, size_model, fp_model );
-			fclose( fp_model );
-
-			model = new EffekseerRendererDX9::Model( data_model, size_model );
-
-			model->ModelCount = Effekseer::Min( Effekseer::Max( model->GetModelCount(), 1 ), 40);
-
-			model->VertexCount = model->GetVertexCount();
-
-			IDirect3DVertexBuffer9* vb = NULL;
-			hr = m_renderer->GetDevice()->CreateVertexBuffer(
-				sizeof(Effekseer::Model::VertexWithIndex) * model->VertexCount * model->ModelCount,
-				D3DUSAGE_WRITEONLY,
-				0,
-				D3DPOOL_MANAGED,
-				&vb,
-				NULL );
-
-			if( FAILED( hr ) )
-			{
-				/* DirectX9Ex‚Å‚ÍD3DPOOL_MANAGEDg—p•s‰Â */
-				hr = m_renderer->GetDevice()->CreateVertexBuffer(
-					sizeof(Effekseer::Model::VertexWithIndex) * model->VertexCount * model->ModelCount,
-					D3DUSAGE_WRITEONLY,
-					0,
-					D3DPOOL_DEFAULT,
-					&vb,
-					NULL );
-			}
-
-			if( vb != NULL )
-			{
-				uint8_t* resource = NULL;
-				vb->Lock( 0, 0, (void**)&resource, 0 );
-
-				for(int32_t m = 0; m < model->ModelCount; m++ )
-				{
-					for( int32_t i = 0; i < model->GetVertexCount(); i++ )
-					{
-						Effekseer::Model::VertexWithIndex v;
-						v.Position = model->GetVertexes()[i].Position;
-						v.Normal = model->GetVertexes()[i].Normal;
-						v.Binormal = model->GetVertexes()[i].Binormal;
-						v.Tangent = model->GetVertexes()[i].Tangent;
-						v.UV = model->GetVertexes()[i].UV;
-						v.Index[0] = m;
-
-						memcpy( resource, &v, sizeof(Effekseer::Model::VertexWithIndex) );
-						resource += sizeof(Effekseer::Model::VertexWithIndex);
-					}
-				}
-
-				vb->Unlock();
-			}
-
-			model->VertexBuffer = vb;
-
-			model->FaceCount = model->GetFaceCount();
-			model->IndexCount = model->FaceCount * 3;
-			IDirect3DIndexBuffer9* ib = NULL;
-			hr = m_renderer->GetDevice()->CreateIndexBuffer( 
-				sizeof(Effekseer::Model::Face) * model->FaceCount * model->ModelCount,
-				D3DUSAGE_WRITEONLY, 
-				D3DFMT_INDEX32, 
-				D3DPOOL_MANAGED, 
-				&ib, 
-				NULL );
-
-			if( FAILED( hr ) )
-			{
-				hr = m_renderer->GetDevice()->CreateIndexBuffer( 
-					sizeof(Effekseer::Model::Face) * model->FaceCount * model->ModelCount,
-					D3DUSAGE_WRITEONLY, 
-					D3DFMT_INDEX32, 
-					D3DPOOL_DEFAULT, 
-					&ib, 
-					NULL );
-			}
-
-			if( ib != NULL )
-			{
-				uint8_t* resource = NULL;
-				ib->Lock( 0, 0, (void**)&resource, 0 );
-				for(int32_t m = 0; m < model->ModelCount; m++ )
-				{
-					for( int32_t i = 0; i < model->FaceCount; i++ )
-					{
-						Effekseer::Model::Face f;
-						f.Indexes[0] = model->GetFaces()[i].Indexes[0] + model->GetVertexCount() * m;
-						f.Indexes[1] = model->GetFaces()[i].Indexes[1] + model->GetVertexCount() * m;
-						f.Indexes[2] = model->GetFaces()[i].Indexes[2] + model->GetVertexCount() * m;
-
-						memcpy( resource, &f, sizeof(Effekseer::Model::Face) );
-						resource += sizeof(Effekseer::Model::Face);
-					}
-				}
-				
-				ib->Unlock();
-			}
-
-			model->IndexBuffer = ib;
-
-			delete [] data_model;
-
-			return model;
+			m_models[key] = m;
 		}
 
-	}
+		ES_SAFE_DELETE(loader);
 
-	return model;
+		return m;
+	}
 }
 
 //----------------------------------------------------------------------------------
@@ -803,6 +675,11 @@ void Native::ModelLoader::Unload( void* data )
 		texture->Release();
 	}
 	*/
+}
+
+::Effekseer::Effect* Native::GetEffect()
+{
+	return g_effect;
 }
 
 //----------------------------------------------------------------------------------
@@ -833,7 +710,7 @@ bool Native::CreateWindow_Effekseer(void* pHandle, int width, int height, bool i
 	g_renderer = new ::EffekseerTool::Renderer( 20000, isSRGBMode );
 	if( g_renderer->Initialize( (HWND)pHandle, width, height ) )
 	{
-		// ŠÖ”’Ç‰Á
+		// é–¢æ•°è¿½åŠ 
 		//::Effekseer::ScriptRegister::SetExternalFunction(0, print);
 
 		g_manager = ::Effekseer::Manager::Create( 20000 );
@@ -858,9 +735,29 @@ bool Native::CreateWindow_Effekseer(void* pHandle, int width, int height, bool i
 			g_manager->SetRingRenderer( ring_renderer );
 			g_manager->SetModelRenderer( model_renderer );
 			g_manager->SetTrackRenderer( track_renderer );
-			g_manager->SetTextureLoader( new TextureLoader( (EffekseerRendererDX9::Renderer *)g_renderer->GetRenderer(), isSRGBMode ) );
+			g_manager->SetTextureLoader( new TextureLoader( (EffekseerRendererDX9::Renderer *)g_renderer->GetRenderer()) );
 			g_manager->SetModelLoader( new ModelLoader( (EffekseerRendererDX9::Renderer *)g_renderer->GetRenderer() ) );
 		}
+
+		// Assign device lost events.
+		g_renderer->LostedDevice = [this]() -> void
+		{
+			this->InvalidateTextureCache();
+			auto e = this->GetEffect();
+			if (e != nullptr)
+			{
+				e->UnloadResources();
+			}
+		};
+
+		g_renderer->ResettedDevice = [this]() -> void
+		{
+			auto e = this->GetEffect();
+			if (e != nullptr)
+			{
+				e->ReloadResources();
+			}
+		};
 	}
 	else
 	{
@@ -950,7 +847,7 @@ bool Native::DestroyWindow()
 
 	for( size_t i = 0; i < g_handles.size(); i++ )
 	{
-		g_manager->StopEffect( g_handles[i] );
+		g_manager->StopEffect( g_handles[i].Handle );
 	}
 	g_handles.clear();
 	
@@ -1022,7 +919,22 @@ bool Native::PlayEffect()
 		posY += m_effectBehavior.PositionY;
 		posZ += m_effectBehavior.PositionZ;
 
-		g_handles.push_back( g_manager->Play( g_effect, x, y, z ) );
+		HandleHolder handleHolder(g_manager->Play(g_effect, x, y, z));
+		g_handles.push_back(handleHolder);
+
+		if (m_effectBehavior.AllColorR != 255 ||
+			m_effectBehavior.AllColorG != 255 ||
+			m_effectBehavior.AllColorB != 255 ||
+			m_effectBehavior.AllColorA != 255)
+		{
+			g_manager->SetAllColor(
+				handleHolder.Handle,
+				Effekseer::Color(
+				m_effectBehavior.AllColorR,
+				m_effectBehavior.AllColorG,
+				m_effectBehavior.AllColorB,
+				m_effectBehavior.AllColorA));
+		}
 	}
 	}
 	}
@@ -1051,7 +963,7 @@ bool Native::StopEffect()
 
 	for( size_t i = 0; i < g_handles.size(); i++ )
 	{
-		g_manager->StopEffect( g_handles[i] );
+		g_manager->StopEffect( g_handles[i].Handle );
 	}
 	g_handles.clear();
 
@@ -1079,7 +991,7 @@ bool Native::StepEffect( int frame )
 
 		for( size_t i = 0; i < g_handles.size(); i++ )
 		{
-			g_manager->SetShown( g_handles[i], false );
+			g_manager->SetShown( g_handles[i].Handle, false );
 		}
 
 		for( int i = 0; i < frame - 1; i++ )
@@ -1089,7 +1001,7 @@ bool Native::StepEffect( int frame )
 
 		for( size_t i = 0; i < g_handles.size(); i++ )
 		{
-			g_manager->SetShown( g_handles[i], true );
+			g_manager->SetShown( g_handles[i].Handle, true );
 		}
 
 		g_sound->SetMute(mute);
@@ -1103,6 +1015,11 @@ bool Native::StepEffect( int frame )
 //----------------------------------------------------------------------------------
 bool Native::StepEffect()
 {
+	if (m_effectBehavior.TimeSpan > 0 && m_time > 0 && m_time % m_effectBehavior.TimeSpan == 0)
+	{
+		PlayEffect();
+	}
+
 	if( m_time % m_step == 0 )
 	{
 		m_rootLocation.X += m_effectBehavior.PositionVelocityX;
@@ -1147,9 +1064,10 @@ bool Native::StepEffect()
 			Effekseer::Matrix43::Multiple( mat, mat, matRot );
 			Effekseer::Matrix43::Multiple( mat, mat, matTra );
 
-			g_manager->SetMatrix( g_handles[index], mat );
+			g_manager->SetMatrix( g_handles[index].Handle, mat );
 
-			g_manager->SetTargetLocation( g_handles[index], 
+			g_manager->SetTargetLocation(
+				g_handles[index].Handle, 
 				m_effectBehavior.TargetPositionX,
 				m_effectBehavior.TargetPositionY,
 				m_effectBehavior.TargetPositionZ );
@@ -1159,15 +1077,22 @@ bool Native::StepEffect()
 		}
 		}
 
-		if( m_time >= m_effectBehavior.RemovedTime )
+		
+		for( size_t i = 0; i < g_handles.size(); i++ )
 		{
-			for( size_t i = 0; i < g_handles.size(); i++ )
+			if (g_handles[i].Time >= m_effectBehavior.RemovedTime)
 			{
-				g_manager->StopRoot( g_handles[i] );
+				g_manager->StopRoot(g_handles[i].Handle);
 			}
 		}
+		
 
 		g_manager->Update( (float)m_step );
+
+		for (size_t i = 0; i < g_handles.size(); i++)
+		{
+			g_handles[i].Time++;
+		}
 	}
 
 	m_time++;
@@ -1600,6 +1525,8 @@ ViewerParamater Native::GetViewerParamater()
 	paramater.Distance = g_Distance;
 	paramater.RendersGuide = g_renderer->RendersGuide;
 	paramater.RateOfMagnification = g_renderer->RateOfMagnification;
+	
+	paramater.Distortion = (DistortionType)g_renderer->Distortion;
 
 	return paramater;
 }
@@ -1633,6 +1560,8 @@ void Native::SetViewerParamater( ViewerParamater& paramater )
 	g_RotY = paramater.AngleY;
 	g_Distance = paramater.Distance;
 	g_renderer->RendersGuide = paramater.RendersGuide;
+
+	g_renderer->Distortion = (::EffekseerTool::eDistortionType)paramater.Distortion;
 }
 
 //----------------------------------------------------------------------------------
@@ -1678,19 +1607,20 @@ bool Native::SetSoundVolume( float volume )
 bool Native::InvalidateTextureCache()
 {
 	{
-		std::map<std::wstring,IDirect3DTexture9*>::iterator it = m_textures.begin();
-		std::map<std::wstring,IDirect3DTexture9*>::iterator it_end = m_textures.end();
+		auto it = m_textures.begin();
+		auto it_end = m_textures.end();
 		while( it != it_end )
 		{
-			ES_SAFE_RELEASE( (*it).second );
+			auto p = (IDirect3DTexture9*)(*it).second->UserPtr;
+			ES_SAFE_RELEASE(p);
 			++it;
 		}
 		m_textures.clear();
 	}
 
 	{
-		std::map<std::wstring,EffekseerRendererDX9::Model*>::iterator it = m_models.begin();
-		std::map<std::wstring,EffekseerRendererDX9::Model*>::iterator it_end = m_models.end();
+		auto it = m_models.begin();
+		auto it_end = m_models.end();
 		while( it != it_end )
 		{
 			ES_SAFE_DELETE( (*it).second );

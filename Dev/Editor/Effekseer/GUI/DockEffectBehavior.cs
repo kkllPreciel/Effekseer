@@ -19,11 +19,8 @@ namespace Effekseer.GUI
 
 			lp_behavior.SetType(typeof(Data.EffectBehaviorValues));
 
-			if (Core.Language == Language.English)
-			{
-				this.Text = "Behavior";
-			}
-		}
+            Icon = Icon.FromHandle(((Bitmap)Properties.Resources.IconBehavior).GetHicon());
+        }
 
 		void Read()
 		{

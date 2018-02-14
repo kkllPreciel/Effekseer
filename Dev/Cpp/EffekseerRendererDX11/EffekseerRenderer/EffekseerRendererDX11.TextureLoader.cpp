@@ -1,4 +1,4 @@
-#ifdef __EFFEKSEER_RENDERER_INTERNAL_LOADER__
+﻿#ifdef __EFFEKSEER_RENDERER_INTERNAL_LOADER__
 
 //----------------------------------------------------------------------------------
 // Include
@@ -8,6 +8,7 @@
 
 #include "../../EffekseerRendererCommon/EffekseerRenderer.DXTK.DDSTextureLoader.h"
 #include "../../EffekseerRendererCommon/EffekseerRenderer.PngTextureLoader.h"
+#include "../../EffekseerRendererCommon/EffekseerRenderer.DDSTextureLoader.h"
 
 //-----------------------------------------------------------------------------------
 //
@@ -17,14 +18,20 @@ namespace EffekseerRendererDX11
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-TextureLoader::TextureLoader( Renderer* renderer, ::Effekseer::FileInterface* fileInterface )
-	: m_renderer		( renderer )
-	, m_fileInterface	( fileInterface )
+TextureLoader::TextureLoader(ID3D11Device* device, ::Effekseer::FileInterface* fileInterface )
+	: m_fileInterface	(fileInterface)
+	, device			(device)
 {
-	if( m_fileInterface == NULL )
+	ES_SAFE_ADDREF(device);
+
+	if( fileInterface == NULL )
 	{
 		m_fileInterface = &m_defaultFileInterface;
 	}
+
+#ifdef __EFFEKSEER_RENDERER_INTERNAL_LOADER__
+	EffekseerRenderer::PngTextureLoader::Initialize();
+#endif
 }
 
 //----------------------------------------------------------------------------------
@@ -32,13 +39,17 @@ TextureLoader::TextureLoader( Renderer* renderer, ::Effekseer::FileInterface* fi
 //----------------------------------------------------------------------------------
 TextureLoader::~TextureLoader()
 {
+#ifdef __EFFEKSEER_RENDERER_INTERNAL_LOADER__
+	EffekseerRenderer::PngTextureLoader::Finalize();
+#endif
 
+	ES_SAFE_RELEASE(device);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType textureType)
+Effekseer::TextureData* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType textureType)
 {
 	std::auto_ptr<::Effekseer::FileReader> 
 		reader( m_fileInterface->OpenRead( path ) );
@@ -46,6 +57,7 @@ void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType texture
 	if( reader.get() != NULL )
 	{
 		ID3D11ShaderResourceView* texture = NULL;
+		Effekseer::TextureData* textureData = nullptr;
 
 		size_t size_texture = reader->GetLength();
 		char* data_texture = new char[size_texture];
@@ -80,12 +92,11 @@ void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType texture
 				data.SysMemPitch = TexDesc.Width * 4;
 				data.SysMemSlicePitch = TexDesc.Width * TexDesc.Height * 4;
 
-				HRESULT hr = m_renderer->GetDevice()->CreateTexture2D(&TexDesc, &data, &tex);
+				HRESULT hr = device->CreateTexture2D(&TexDesc, &data, &tex);
 
 				if (FAILED(hr))
 				{
-					delete [] data_texture;
-					return (void*)texture;
+					goto Exit;
 				}
 			
 				D3D11_SHADER_RESOURCE_VIEW_DESC desc;
@@ -95,15 +106,21 @@ void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType texture
 				desc.Texture2D.MostDetailedMip = 0;
 				desc.Texture2D.MipLevels = TexDesc.MipLevels;
 
-				hr = m_renderer->GetDevice()->CreateShaderResourceView(tex, &desc, &texture);
+				hr = device->CreateShaderResourceView(tex, &desc, &texture);
 				if (FAILED(hr))
 				{
 					ES_SAFE_RELEASE(texture);
-					delete [] data_texture;
-					return (void*)texture;
+					goto Exit;
 				}
 
 				ES_SAFE_RELEASE(tex);
+
+				textureData = new Effekseer::TextureData();
+				textureData->UserPtr = texture;
+				textureData->UserID = 0;
+				textureData->TextureFormat = Effekseer::TextureFormatType::ABGR8;
+				textureData->Width = TexDesc.Width;
+				textureData->Height = TexDesc.Height;
 			}
 		}
 		else if( data_texture[0] == 'D' &&
@@ -113,31 +130,47 @@ void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType texture
 		{
 			ID3D11Resource* textureR = NULL;
 			EffekseerDirectX::CreateDDSTextureFromMemory(
-				m_renderer->GetDevice(),
+				device,
 				(uint8_t*)data_texture,
 				size_texture,
 				&textureR,
 				&texture );
 
 			ES_SAFE_RELEASE(textureR);
+
+			// To get texture size, use loader
+			EffekseerRenderer::DDSTextureLoader::Load(data_texture, size_texture);
+
+			textureData = new Effekseer::TextureData();
+			textureData->UserPtr = texture;
+			textureData->UserID = 0;
+			textureData->TextureFormat = EffekseerRenderer::DDSTextureLoader::GetTextureFormat();
+			textureData->Width = EffekseerRenderer::DDSTextureLoader::GetWidth();
+			textureData->Height = EffekseerRenderer::DDSTextureLoader::GetHeight();
 		}
 
-		delete [] data_texture;
-		return (void*)texture;
+	Exit:;
+		delete[] data_texture;
+		return textureData;
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void TextureLoader::Unload( void* data )
+void TextureLoader::Unload(Effekseer::TextureData* data)
 {
-	if( data != NULL )
+	if (data != nullptr && data->UserPtr != nullptr)
 	{
-		ID3D11ShaderResourceView* texture = (ID3D11ShaderResourceView*)data;
+		auto texture = (ID3D11ShaderResourceView*)data->UserPtr;
 		texture->Release();
+	}
+
+	if (data != nullptr)
+	{
+		delete data;
 	}
 }
 

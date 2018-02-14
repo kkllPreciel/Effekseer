@@ -1,10 +1,10 @@
-
+Ôªø
 #ifndef	__EFFEKSEER_DLL_H__
 #define	__EFFEKSEER_DLL_H__
 
 /**
 	@file
-	@brief	ÉcÅ[Éãå¸ÇØDLLèoóÕ
+	@brief	„ÉÑ„Éº„É´Âêë„ÅëDLLÂá∫Âäõ
 */
 
 //----------------------------------------------------------------------------------
@@ -19,6 +19,15 @@
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
+enum class DistortionType
+{
+	Current,
+	Effekseer120,
+	Disabled,
+};
+
+
 class ViewerParamater
 {
 public:
@@ -41,6 +50,8 @@ public:
 	float	CullingY;
 	float	CullingZ;
 
+	DistortionType	Distortion;
+
 	ViewerParamater();
 };
 
@@ -50,6 +61,14 @@ public:
 	int32_t	CountX;
 	int32_t	CountY;
 	int32_t	CountZ;
+
+	int32_t	TimeSpan = 0;
+
+	uint8_t AllColorR = 255;
+	uint8_t AllColorG = 255;
+	uint8_t AllColorB = 255;
+	uint8_t AllColorA = 255;
+
 	float	Distance;
 
 	int32_t	RemovedTime;
@@ -101,15 +120,15 @@ private:
 	{
 	private:
 		EffekseerRenderer::Renderer*	m_renderer;
-		bool							m_isSRGBMode = false;
+		Effekseer::TextureLoader*		m_originalTextureLoader;
 	public:
-		TextureLoader( EffekseerRenderer::Renderer* renderer, bool isSRGBMode );
+		TextureLoader( EffekseerRenderer::Renderer* renderer);
 		virtual ~TextureLoader();
 
 	public:
-		void* Load( const EFK_CHAR* path, ::Effekseer::TextureType textureType ) override;
+		Effekseer::TextureData* Load( const EFK_CHAR* path, ::Effekseer::TextureType textureType ) override;
 
-		void Unload( void* data );
+		void Unload(Effekseer::TextureData* data) override;
 
 		std::wstring RootPath;
 	};
@@ -161,6 +180,9 @@ private:
 	::Effekseer::Vector3D m_rootLocation;
 	::Effekseer::Vector3D m_rootRotation;
 	::Effekseer::Vector3D m_rootScale;
+
+	::Effekseer::Effect* GetEffect();
+
 public:
 	Native();
 

@@ -1,14 +1,18 @@
-
+Ôªø
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 #include "Effekseer.Manager.h"
 #include "Effekseer.Effect.h"
+#include "Effekseer.EffectImplemented.h"
 #include "Effekseer.EffectNode.h"
+
 #include "Effekseer.Vector3D.h"
 
 #include "Effekseer.Instance.h"
+#include "Effekseer.InstanceContainer.h"
+#include "Effekseer.InstanceGlobal.h"
 
 #include "Effekseer.EffectNodeRoot.h"
 #include "Effekseer.EffectNodeSprite.h"
@@ -26,25 +30,27 @@ namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-EffectNode::EffectNode( Effect* effect, unsigned char*& pos )
+EffectNodeImplemented::EffectNodeImplemented(Effect* effect, unsigned char*& pos)
 	: m_effect		( effect )
-	, IsRendered		( true )
-	, SoundType			( ParameterSoundType_None )
-	, RenderingOrder	( RenderingOrder_FirstCreatedInstanceIsFirst )
 	, m_userData		( NULL )
+	, IsRendered		(true)
 	, TranslationFCurve	( NULL )
 	, RotationFCurve	( NULL )
 	, ScalingFCurve		( NULL )
+	, SoundType			(ParameterSoundType_None)
+	, RenderingOrder	(RenderingOrder_FirstCreatedInstanceIsFirst)
 {
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNode::LoadParameter(unsigned char*& pos, EffectNode* parent, Setting* setting)
+void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* parent, Setting* setting)
 {
 	int size = 0;
 	int node_type = 0;
+	auto ef = (EffectImplemented*) m_effect;
+
 	memcpy( &node_type, pos, sizeof(int) );
 	pos += sizeof(int);
 
@@ -62,6 +68,15 @@ void EffectNode::LoadParameter(unsigned char*& pos, EffectNode* parent, Setting*
 	}
 	else
 	{
+		if (m_effect->GetVersion() >= 10)
+		{
+			int32_t rendered = 0;
+			memcpy(&rendered, pos, sizeof(int32_t));
+			pos += sizeof(int32_t);
+
+			IsRendered = rendered != 0;
+		}
+
 		memcpy( &size, pos, sizeof(int) );
 		pos += sizeof(int);
 
@@ -103,7 +118,7 @@ void EffectNode::LoadParameter(unsigned char*& pos, EffectNode* parent, Setting*
 			memcpy( &TranslationFixed, pos, size );
 			pos += size;
 
-			// ñ≥å¯âª
+			// ÁÑ°ÂäπÂåñ
 			if( TranslationFixed.Position.X == 0.0f &&
 				TranslationFixed.Position.Y == 0.0f &&
 				TranslationFixed.Position.Z == 0.0f )
@@ -137,8 +152,8 @@ void EffectNode::LoadParameter(unsigned char*& pos, EffectNode* parent, Setting*
 			pos += TranslationFCurve->Load( pos, m_effect->GetVersion() );
 		}
 
-		/* à íuägëÂèàóù */
-		if( m_effect->GetVersion() >= 8 )
+		/* ‰ΩçÁΩÆÊã°Â§ßÂá¶ÁêÜ */
+		if (ef->IsDyanamicMagnificationValid())
 		{
 			if( TranslationType == ParameterTranslationType_Fixed )
 			{
@@ -171,7 +186,7 @@ void EffectNode::LoadParameter(unsigned char*& pos, EffectNode* parent, Setting*
 		memcpy( &LocationAbs.type, pos, sizeof(int) );
 		pos += sizeof(int);
 
-		/* ê‚ëŒà íu */
+		// Calc attraction forces
 		if( LocationAbs.type == LocationAbsParameter::None )
 		{
 			memcpy( &size, pos, sizeof(int) );
@@ -197,8 +212,8 @@ void EffectNode::LoadParameter(unsigned char*& pos, EffectNode* parent, Setting*
 			pos += size;
 		}
 
-		/* ê‚ëŒà íuägëÂèàóù */
-		if( m_effect->GetVersion() >= 8 )
+		// Magnify attraction forces
+		if (ef->IsDyanamicMagnificationValid())
 		{
 			if( LocationAbs.type == LocationAbsParameter::None )
 			{
@@ -220,7 +235,7 @@ void EffectNode::LoadParameter(unsigned char*& pos, EffectNode* parent, Setting*
 			memcpy( &RotationFixed, pos, size );
 			pos += size;
 
-			// ñ≥å¯âª
+			// ÁÑ°ÂäπÂåñ
 			if( RotationFixed.Position.X == 0.0f &&
 				RotationFixed.Position.Y == 0.0f &&
 				RotationFixed.Position.Z == 0.0f )
@@ -281,7 +296,7 @@ void EffectNode::LoadParameter(unsigned char*& pos, EffectNode* parent, Setting*
 			memcpy( &ScalingFixed, pos, size );
 			pos += size;
 
-			// ñ≥å¯âª
+			// ÁÑ°ÂäπÂåñ
 			if( ScalingFixed.Position.X == 1.0f &&
 				ScalingFixed.Position.Y == 1.0f &&
 				ScalingFixed.Position.Z == 1.0f)
@@ -334,17 +349,26 @@ void EffectNode::LoadParameter(unsigned char*& pos, EffectNode* parent, Setting*
 			ScalingFCurve->Z.SetDefaultValue( 1.0f );
 		}
 
-		/* ê∂ê¨à íu */
-		GenerationLocation.load( pos );
+		/* Spawning Method */
+		GenerationLocation.load( pos, m_effect->GetVersion());
 
-		/* ê∂ê¨à íuägëÂèàóù*/
-		if( m_effect->GetVersion() >= 8  
-			/* && (this->CommonValues.ScalingBindType == BindType_NotBind || parent->GetType() == EFFECT_NODE_TYPE_ROOT)*/ )
+		/* Spawning Method Êã°Â§ßÂá¶ÁêÜ*/
+		if (ef->IsDyanamicMagnificationValid()
+			/* && (this->CommonValues.ScalingBindType == BindType::NotBind || parent->GetType() == EFFECT_NODE_TYPE_ROOT)*/ )
 		{
 			if( GenerationLocation.type == ParameterGenerationLocation::TYPE_POINT )
 			{
 				GenerationLocation.point.location.min *= m_effect->GetMaginification();
 				GenerationLocation.point.location.max *= m_effect->GetMaginification();
+			}
+			else if (GenerationLocation.type == ParameterGenerationLocation::TYPE_LINE)
+			{
+				GenerationLocation.line.position_end.min *= m_effect->GetMaginification();
+				GenerationLocation.line.position_end.max *= m_effect->GetMaginification();
+				GenerationLocation.line.position_start.min *= m_effect->GetMaginification();
+				GenerationLocation.line.position_start.max *= m_effect->GetMaginification();
+				GenerationLocation.line.position_noize.min *= m_effect->GetMaginification();
+				GenerationLocation.line.position_noize.max *= m_effect->GetMaginification();
 			}
 			else if( GenerationLocation.type == ParameterGenerationLocation::TYPE_SPHERE )
 			{
@@ -358,7 +382,32 @@ void EffectNode::LoadParameter(unsigned char*& pos, EffectNode* parent, Setting*
 			}		
 		}
 
-		// âEéËånç∂éËånïœä∑
+		// Load depth values
+		if (m_effect->GetVersion() >= 12)
+		{
+			memcpy(&DepthValues.DepthOffset, pos, sizeof(float));
+			pos += sizeof(float);
+
+			auto IsDepthOffsetScaledWithCamera = 0;
+			memcpy(&IsDepthOffsetScaledWithCamera, pos, sizeof(int32_t));
+			pos += sizeof(int32_t);
+
+			DepthValues.IsDepthOffsetScaledWithCamera = IsDepthOffsetScaledWithCamera > 0;
+
+			auto IsDepthOffsetScaledWithParticleScale = 0;
+			memcpy(&IsDepthOffsetScaledWithParticleScale, pos, sizeof(int32_t));
+			pos += sizeof(int32_t);
+
+			DepthValues.IsDepthOffsetScaledWithParticleScale = IsDepthOffsetScaledWithParticleScale > 0;
+
+			memcpy(&DepthValues.SoftParticle, pos, sizeof(float));
+			pos += sizeof(float);
+
+			DepthValues.DepthOffset *= m_effect->GetMaginification();
+			DepthValues.SoftParticle *= m_effect->GetMaginification();
+		}
+
+		// Convert right handle coordinate system into left handle coordinate system
 		if( setting->GetCoordinateSystem() == CoordinateSystem::LH )
 		{
 			// Translation
@@ -447,21 +496,18 @@ void EffectNode::LoadParameter(unsigned char*& pos, EffectNode* parent, Setting*
 
 		if( m_effect->GetVersion() >= 3)
 		{
-			Texture.load( pos, m_effect->GetVersion() );
-
-			// ägëÂèàóù
-			Texture.DistortionIntensity *= m_effect->GetMaginification();
+			RendererCommon.load( pos, m_effect->GetVersion() );
 		}
 		else
 		{
-			Texture.reset();
+			RendererCommon.reset();
 		}
 
 		LoadRendererParameter( pos, m_effect->GetSetting() );
-		
+
 		if( m_effect->GetVersion() >= 1)
 		{
-			// ÉTÉEÉìÉh
+			// Sound
 			memcpy( &SoundType, pos, sizeof(int) );
 			pos += sizeof(int);
 			if( SoundType == ParameterSoundType_Use )
@@ -484,7 +530,7 @@ void EffectNode::LoadParameter(unsigned char*& pos, EffectNode* parent, Setting*
 		}
 	}
 
-	// ÉmÅ[Éh
+	// „Éé„Éº„Éâ
 	int nodeCount = 0;
 	memcpy( &nodeCount, pos, sizeof(int) );
 	pos += sizeof( int );
@@ -492,14 +538,14 @@ void EffectNode::LoadParameter(unsigned char*& pos, EffectNode* parent, Setting*
 	m_Nodes.resize( nodeCount );
 	for( size_t i = 0; i < m_Nodes.size(); i++ )
 	{
-		m_Nodes[i] = EffectNode::Create( m_effect, this, pos );
+		m_Nodes[i] = EffectNodeImplemented::Create(m_effect, this, pos);
 	}
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-EffectNode::~EffectNode()
+EffectNodeImplemented::~EffectNodeImplemented()
 {
 	for( size_t i = 0; i < m_Nodes.size(); i++ )
 	{
@@ -514,28 +560,7 @@ EffectNode::~EffectNode()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNode::LoadOption( uint8_t*& pos )
-{
-	int is_rendered = 0;
-	memcpy( &is_rendered, pos, sizeof(int) );
-	pos += sizeof(int);
-
-	IsRendered = is_rendered != 0;
-
-	int count = 0;
-	memcpy( &count, pos, sizeof(int) );
-	pos += sizeof(int);
-
-	for( int i = 0; i < count; i++ )
-	{
-		m_Nodes[i]->LoadOption( pos );
-	}
-}
-
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-Effect* EffectNode::GetEffect() const
+Effect* EffectNodeImplemented::GetEffect() const
 {
 	return m_effect;
 }
@@ -543,7 +568,7 @@ Effect* EffectNode::GetEffect() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-int EffectNode::GetChildrenCount() const
+int EffectNodeImplemented::GetChildrenCount() const
 {
 	return (int)m_Nodes.size();
 }
@@ -551,16 +576,57 @@ int EffectNode::GetChildrenCount() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-EffectNode* EffectNode::GetChild( int num ) const
+EffectNode* EffectNodeImplemented::GetChild(int index) const
 {
-	if( num >= GetChildrenCount() ) return NULL;
-	return m_Nodes[ num ];
+	if (index >= GetChildrenCount()) return NULL;
+	return m_Nodes[index];
+}
+
+
+EffectBasicRenderParameter EffectNodeImplemented::GetBasicRenderParameter()
+{
+	EffectBasicRenderParameter param;
+	param.ColorTextureIndex = RendererCommon.ColorTextureIndex;
+	param.AlphaBlend = RendererCommon.AlphaBlend;
+	param.Distortion = RendererCommon.Distortion;
+	param.DistortionIntensity = RendererCommon.DistortionIntensity;
+	param.FilterType = RendererCommon.FilterType;
+	param.WrapType = RendererCommon.WrapType;
+	param.ZTest = RendererCommon.ZTest;
+	param.ZWrite = RendererCommon.ZWrite;
+	return param;
+}
+
+void EffectNodeImplemented::SetBasicRenderParameter(EffectBasicRenderParameter param)
+{
+	RendererCommon.ColorTextureIndex = param.ColorTextureIndex;
+	RendererCommon.AlphaBlend = param.AlphaBlend;
+	RendererCommon.Distortion = param.Distortion;
+	RendererCommon.DistortionIntensity = param.DistortionIntensity;
+	RendererCommon.FilterType = param.FilterType;
+	RendererCommon.WrapType = param.WrapType;
+	RendererCommon.ZTest = param.ZTest;
+	RendererCommon.ZWrite = param.ZWrite;
+}
+
+EffectModelParameter EffectNodeImplemented::GetEffectModelParameter()
+{
+	EffectModelParameter param;
+	param.Lighting = false;
+
+	if (GetType() == EFFECT_NODE_TYPE_MODEL)
+	{
+		auto t = (EffectNodeModel*)this;
+		param.Lighting = t->Lighting;
+	}
+
+	return param;
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNode::LoadRendererParameter(unsigned char*& pos, Setting* setting)
+void EffectNodeImplemented::LoadRendererParameter(unsigned char*& pos, Setting* setting)
 {
 	int32_t type = 0;
 	memcpy( &type, pos, sizeof(int) );
@@ -572,79 +638,79 @@ void EffectNode::LoadRendererParameter(unsigned char*& pos, Setting* setting)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNode::BeginRendering(int32_t count, Manager* manager)
+void EffectNodeImplemented::BeginRendering(int32_t count, Manager* manager)
 {
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNode::BeginRenderingGroup(InstanceGroup* group, Manager* manager)
+void EffectNodeImplemented::BeginRenderingGroup(InstanceGroup* group, Manager* manager)
 {
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNode::Rendering(const Instance& instance, Manager* manager)
+void EffectNodeImplemented::Rendering(const Instance& instance, Manager* manager)
 {
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNode::EndRendering(Manager* manager)
+void EffectNodeImplemented::EndRendering(Manager* manager)
 {
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNode::InitializeRenderedInstanceGroup(InstanceGroup& instanceGroup, Manager* manager)
+void EffectNodeImplemented::InitializeRenderedInstanceGroup(InstanceGroup& instanceGroup, Manager* manager)
 {
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNode::InitializeRenderedInstance(Instance& instance, Manager* manager)
+void EffectNodeImplemented::InitializeRenderedInstance(Instance& instance, Manager* manager)
 {
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNode::UpdateRenderedInstance(Instance& instance, Manager* manager)
+void EffectNodeImplemented::UpdateRenderedInstance(Instance& instance, Manager* manager)
 {
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-float EffectNode::GetFadeAlpha( const Instance& instance )
+float EffectNodeImplemented::GetFadeAlpha(const Instance& instance)
 {
 	float alpha = 1.0f;
 
-	if( Texture.FadeInType == ParameterTexture::FADEIN_ON && instance.m_LivingTime < Texture.FadeIn.Frame )
+	if( RendererCommon.FadeInType == ParameterRendererCommon::FADEIN_ON && instance.m_LivingTime < RendererCommon.FadeIn.Frame )
 	{
 		float v = 1.0f;
-		Texture.FadeIn.Value.setValueToArg( 
+		RendererCommon.FadeIn.Value.setValueToArg( 
 			v,
 			0.0f,
 			1.0f,
-			(float)instance.m_LivingTime / (float)Texture.FadeIn.Frame );
+			(float)instance.m_LivingTime / (float)RendererCommon.FadeIn.Frame );
 
 		alpha *= v;
 	}
 
-	if( Texture.FadeOutType == ParameterTexture::FADEOUT_ON && instance.m_LivingTime + Texture.FadeOut.Frame > instance.m_LivedTime )
+	if( RendererCommon.FadeOutType == ParameterRendererCommon::FADEOUT_ON && instance.m_LivingTime + RendererCommon.FadeOut.Frame > instance.m_LivedTime )
 	{
 		float v = 1.0f;
-		Texture.FadeOut.Value.setValueToArg( 
+		RendererCommon.FadeOut.Value.setValueToArg( 
 			v,
 			1.0f,
 			0.0f,
-			(float)( instance.m_LivingTime + Texture.FadeOut.Frame - instance.m_LivedTime ) / (float)Texture.FadeOut.Frame );
+			(float)( instance.m_LivingTime + RendererCommon.FadeOut.Frame - instance.m_LivedTime ) / (float)RendererCommon.FadeOut.Frame );
 
 		alpha *= v;
 	}
@@ -655,8 +721,10 @@ float EffectNode::GetFadeAlpha( const Instance& instance )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNode::PlaySound_(Instance& instance, SoundTag tag, Manager* manager)
+void EffectNodeImplemented::PlaySound_(Instance& instance, SoundTag tag, Manager* manager)
 {
+	auto instanceGlobal = instance.m_pContainer->GetRootInstance();
+
 	SoundPlayer* player = manager->GetSoundPlayer();
 	if( player == NULL )
 	{
@@ -667,9 +735,9 @@ void EffectNode::PlaySound_(Instance& instance, SoundTag tag, Manager* manager)
 	{
 		SoundPlayer::InstanceParameter parameter;
 		parameter.Data = m_effect->GetWave( Sound.WaveId );
-		parameter.Volume = Sound.Volume.getValue( *manager );
-		parameter.Pitch = Sound.Pitch.getValue( *manager );
-		parameter.Pan = Sound.Pan.getValue( *manager );
+		parameter.Volume = Sound.Volume.getValue(*instanceGlobal);
+		parameter.Pitch = Sound.Pitch.getValue(*instanceGlobal);
+		parameter.Pan = Sound.Pan.getValue(*instanceGlobal);
 		
 		parameter.Mode3D = (Sound.PanType == ParameterSoundPanType_3D);
 		Vector3D::Transform( parameter.Position, 
@@ -683,9 +751,9 @@ void EffectNode::PlaySound_(Instance& instance, SoundTag tag, Manager* manager)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-EffectNode* EffectNode::Create( Effect* effect, EffectNode* parent, unsigned char*& pos )
+EffectNodeImplemented* EffectNodeImplemented::Create(Effect* effect, EffectNode* parent, unsigned char*& pos)
 {
-	EffectNode* effectnode = NULL;
+	EffectNodeImplemented* effectnode = NULL;
 
 	int node_type = 0;
 	memcpy( &node_type, pos, sizeof(int) );
@@ -698,7 +766,7 @@ EffectNode* EffectNode::Create( Effect* effect, EffectNode* parent, unsigned cha
 	else if( node_type == EFFECT_NODE_TYPE_NONE )
 	{
 		EffekseerPrintDebug("* Create : EffectNodeNone\n");
-		effectnode = new EffectNode( effect, pos );
+		effectnode = new EffectNodeImplemented(effect, pos);
 	}
 	else if( node_type == EFFECT_NODE_TYPE_SPRITE )
 	{

@@ -1,4 +1,4 @@
-
+﻿
 #ifndef	__EFFEKSEER_RING_RENDERER_H__
 #define	__EFFEKSEER_RING_RENDERER_H__
 
@@ -35,9 +35,14 @@ public:
 		bool				ZWrite;
 		BillboardType		Billboard;
 		int32_t				VertexCount;
+		bool				IsRightHand;
 
 		bool				Distortion;
 		float				DistortionIntensity;
+
+		float				DepthOffset;
+		bool				IsDepthOffsetScaledWithCamera;
+		bool				IsDepthOffsetScaledWithParticleScale;
 	};
 
 	struct InstanceParameter

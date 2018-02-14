@@ -1,4 +1,4 @@
-
+Ôªø
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
@@ -185,7 +185,7 @@ ModelRenderer* ModelRenderer::Create( RendererImplemented* renderer )
 	assert( renderer != NULL );
 	assert( renderer->GetDevice() != NULL );
 
-	// ç¿ïW(3) ñ@ê¸(3)*3 UV(2)
+	// Â∫ßÊ®ô(3) Ê≥ïÁ∑ö(3)*3 UV(2)
 	D3DVERTEXELEMENT9 decl[] =
 	{
 		{0,	0,	D3DDECLTYPE_FLOAT3,		D3DDECLMETHOD_DEFAULT,	D3DDECLUSAGE_POSITION,	0},
@@ -193,11 +193,10 @@ ModelRenderer* ModelRenderer::Create( RendererImplemented* renderer )
 		{0,	24,	D3DDECLTYPE_FLOAT3,		D3DDECLMETHOD_DEFAULT,	D3DDECLUSAGE_NORMAL,	1},
 		{0,	36,	D3DDECLTYPE_FLOAT3,		D3DDECLMETHOD_DEFAULT,	D3DDECLUSAGE_NORMAL,	2},
 		{0,	48,	D3DDECLTYPE_FLOAT2,		D3DDECLMETHOD_DEFAULT,	D3DDECLUSAGE_TEXCOORD,	0},
-		{0,	56,	D3DDECLTYPE_UBYTE4,		D3DDECLMETHOD_DEFAULT,	D3DDECLUSAGE_BLENDINDICES,	0},
+		{0, 56, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 3 },
+		{0,	60,	D3DDECLTYPE_UBYTE4,		D3DDECLMETHOD_DEFAULT,	D3DDECLUSAGE_BLENDINDICES,	0},
 		D3DDECL_END()
 	};
-
-	//ID3DXBuffer* buf = NULL;
 
 	Shader* shader_lighting_texture_normal = Shader::Create( 
 		renderer, 
@@ -307,6 +306,16 @@ void ModelRenderer::BeginRendering(const efkModelNodeParam& parameter, int32_t c
 	BeginRendering_(m_renderer, parameter, count, userData);
 }
 
+void ModelRenderer::Rendering(const efkModelNodeParam& parameter, const InstanceParameter& instanceParameter, void* userData)
+{
+	Rendering_<
+		RendererImplemented>(
+		m_renderer,
+		parameter,
+		instanceParameter,
+		userData);
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -315,7 +324,6 @@ void ModelRenderer::EndRendering( const efkModelNodeParam& parameter, void* user
 	EndRendering_<
 		RendererImplemented,
 		Shader,
-		IDirect3DTexture9*,
 		Model,
 		true,
 		40>(
@@ -408,7 +416,7 @@ void ModelRenderer::EndRendering( const efkModelNodeParam& parameter, void* user
 	ModelRendererVertexConstantBuffer<40>* vcb = (ModelRendererVertexConstantBuffer<40>*)shader_->GetVertexConstantBuffer();
 	ModelRendererPixelConstantBuffer* pcb = (ModelRendererPixelConstantBuffer*)shader_->GetPixelConstantBuffer();
 	
-	// å≈íËílê›íË
+	// Âõ∫ÂÆöÂÄ§Ë®≠ÂÆö
 	if (parameter.Lighting)
 	{
 		{

@@ -687,6 +687,28 @@ SWIGEXPORT float SWIGSTDCALL CSharp_ViewerParamater_CullingZ_get(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_ViewerParamater_Distortion_set(void * jarg1, int jarg2) {
+  ViewerParamater *arg1 = (ViewerParamater *) 0 ;
+  DistortionType arg2 ;
+  
+  arg1 = (ViewerParamater *)jarg1; 
+  arg2 = (DistortionType)jarg2; 
+  if (arg1) (arg1)->Distortion = arg2;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_ViewerParamater_Distortion_get(void * jarg1) {
+  int jresult ;
+  ViewerParamater *arg1 = (ViewerParamater *) 0 ;
+  DistortionType result;
+  
+  arg1 = (ViewerParamater *)jarg1; 
+  result = (DistortionType) ((arg1)->Distortion);
+  jresult = (int)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_ViewerParamater() {
   void * jresult ;
   ViewerParamater *result = 0 ;
@@ -766,6 +788,116 @@ SWIGEXPORT int SWIGSTDCALL CSharp_ViewerEffectBehavior_CountZ_get(void * jarg1) 
   
   arg1 = (ViewerEffectBehavior *)jarg1; 
   result = (int32_t) ((arg1)->CountZ);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_ViewerEffectBehavior_TimeSpan_set(void * jarg1, int jarg2) {
+  ViewerEffectBehavior *arg1 = (ViewerEffectBehavior *) 0 ;
+  int32_t arg2 ;
+  
+  arg1 = (ViewerEffectBehavior *)jarg1; 
+  arg2 = (int32_t)jarg2; 
+  if (arg1) (arg1)->TimeSpan = arg2;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_ViewerEffectBehavior_TimeSpan_get(void * jarg1) {
+  int jresult ;
+  ViewerEffectBehavior *arg1 = (ViewerEffectBehavior *) 0 ;
+  int32_t result;
+  
+  arg1 = (ViewerEffectBehavior *)jarg1; 
+  result = (int32_t) ((arg1)->TimeSpan);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_ViewerEffectBehavior_AllColorR_set(void * jarg1, unsigned char jarg2) {
+  ViewerEffectBehavior *arg1 = (ViewerEffectBehavior *) 0 ;
+  uint8_t arg2 ;
+  
+  arg1 = (ViewerEffectBehavior *)jarg1; 
+  arg2 = (uint8_t)jarg2; 
+  if (arg1) (arg1)->AllColorR = arg2;
+}
+
+
+SWIGEXPORT unsigned char SWIGSTDCALL CSharp_ViewerEffectBehavior_AllColorR_get(void * jarg1) {
+  unsigned char jresult ;
+  ViewerEffectBehavior *arg1 = (ViewerEffectBehavior *) 0 ;
+  uint8_t result;
+  
+  arg1 = (ViewerEffectBehavior *)jarg1; 
+  result = (uint8_t) ((arg1)->AllColorR);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_ViewerEffectBehavior_AllColorG_set(void * jarg1, unsigned char jarg2) {
+  ViewerEffectBehavior *arg1 = (ViewerEffectBehavior *) 0 ;
+  uint8_t arg2 ;
+  
+  arg1 = (ViewerEffectBehavior *)jarg1; 
+  arg2 = (uint8_t)jarg2; 
+  if (arg1) (arg1)->AllColorG = arg2;
+}
+
+
+SWIGEXPORT unsigned char SWIGSTDCALL CSharp_ViewerEffectBehavior_AllColorG_get(void * jarg1) {
+  unsigned char jresult ;
+  ViewerEffectBehavior *arg1 = (ViewerEffectBehavior *) 0 ;
+  uint8_t result;
+  
+  arg1 = (ViewerEffectBehavior *)jarg1; 
+  result = (uint8_t) ((arg1)->AllColorG);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_ViewerEffectBehavior_AllColorB_set(void * jarg1, unsigned char jarg2) {
+  ViewerEffectBehavior *arg1 = (ViewerEffectBehavior *) 0 ;
+  uint8_t arg2 ;
+  
+  arg1 = (ViewerEffectBehavior *)jarg1; 
+  arg2 = (uint8_t)jarg2; 
+  if (arg1) (arg1)->AllColorB = arg2;
+}
+
+
+SWIGEXPORT unsigned char SWIGSTDCALL CSharp_ViewerEffectBehavior_AllColorB_get(void * jarg1) {
+  unsigned char jresult ;
+  ViewerEffectBehavior *arg1 = (ViewerEffectBehavior *) 0 ;
+  uint8_t result;
+  
+  arg1 = (ViewerEffectBehavior *)jarg1; 
+  result = (uint8_t) ((arg1)->AllColorB);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_ViewerEffectBehavior_AllColorA_set(void * jarg1, unsigned char jarg2) {
+  ViewerEffectBehavior *arg1 = (ViewerEffectBehavior *) 0 ;
+  uint8_t arg2 ;
+  
+  arg1 = (ViewerEffectBehavior *)jarg1; 
+  arg2 = (uint8_t)jarg2; 
+  if (arg1) (arg1)->AllColorA = arg2;
+}
+
+
+SWIGEXPORT unsigned char SWIGSTDCALL CSharp_ViewerEffectBehavior_AllColorA_get(void * jarg1) {
+  unsigned char jresult ;
+  ViewerEffectBehavior *arg1 = (ViewerEffectBehavior *) 0 ;
+  uint8_t result;
+  
+  arg1 = (ViewerEffectBehavior *)jarg1; 
+  result = (uint8_t) ((arg1)->AllColorA);
   jresult = result; 
   return jresult;
 }

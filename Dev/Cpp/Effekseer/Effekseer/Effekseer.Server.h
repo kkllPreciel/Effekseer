@@ -1,6 +1,8 @@
-
+ï»¿
 #ifndef	__EFFEKSEER_SERVER_H__
 #define	__EFFEKSEER_SERVER_H__
+
+#if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
 
 //----------------------------------------------------------------------------------
 // Include
@@ -24,32 +26,32 @@ public:
 	static Server* Create();
 
 	/**
-		@brief	ƒT[ƒo[‚ğŠJn‚·‚éB
+		@brief	ã‚µãƒ¼ãƒãƒ¼ã‚’é–‹å§‹ã™ã‚‹ã€‚
 	*/
 	virtual bool Start( uint16_t port ) = 0;
 
 	virtual void Stop() = 0;
 
 	/**
-		@brief	ƒGƒtƒFƒNƒg‚ğƒŠƒ[ƒh‚Ì‘ÎÛ‚Æ‚µ‚Ä“o˜^‚·‚éB
-		@param	key	[in]	ŒŸõ—pƒL[
-		@param	effect	[in]	ƒŠƒ[ƒh‚·‚é‘ÎÛ‚ÌƒGƒtƒFƒNƒg
+		@brief	ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã‚’ãƒªãƒ­ãƒ¼ãƒ‰ã®å¯¾è±¡ã¨ã—ã¦ç™»éŒ²ã™ã‚‹ã€‚
+		@param	key	[in]	æ¤œç´¢ç”¨ã‚­ãƒ¼
+		@param	effect	[in]	ãƒªãƒ­ãƒ¼ãƒ‰ã™ã‚‹å¯¾è±¡ã®ã‚¨ãƒ•ã‚§ã‚¯ãƒˆ
 	*/
 	virtual void Regist( const EFK_CHAR* key, Effect* effect ) = 0;
 
 	/**
-		@brief	ƒGƒtƒFƒNƒg‚ğƒŠƒ[ƒh‚Ì‘ÎÛ‚©‚çŠO‚·B
-		@param	effect	[in]	ƒŠƒ[ƒh‚©‚çŠO‚·ƒGƒtƒFƒNƒg
+		@brief	ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã‚’ãƒªãƒ­ãƒ¼ãƒ‰ã®å¯¾è±¡ã‹ã‚‰å¤–ã™ã€‚
+		@param	effect	[in]	ãƒªãƒ­ãƒ¼ãƒ‰ã‹ã‚‰å¤–ã™ã‚¨ãƒ•ã‚§ã‚¯ãƒˆ
 	*/
 	virtual void Unregist( Effect* effect ) = 0;
 
 	/**
-		@brief	ƒT[ƒo[‚ğXV‚µAƒGƒtƒFƒNƒg‚ÌƒŠƒ[ƒh‚ğs‚¤B
+		@brief	ã‚µãƒ¼ãƒãƒ¼ã‚’æ›´æ–°ã—ã€ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã®ãƒªãƒ­ãƒ¼ãƒ‰ã‚’è¡Œã†ã€‚
 	*/
 	virtual void Update() = 0;
 
 	/**
-		@brief	‘fŞƒpƒX‚ğİ’è‚·‚éB
+		@brief	ç´ æãƒ‘ã‚¹ã‚’è¨­å®šã™ã‚‹ã€‚
 	*/
 	virtual void SetMaterialPath( const EFK_CHAR* materialPath ) = 0;
 };
@@ -61,4 +63,7 @@ public:
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
+#endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+
 #endif	// __EFFEKSEER_SERVER_H__

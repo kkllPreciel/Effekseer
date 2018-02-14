@@ -1,4 +1,4 @@
-
+ï»¿
 #ifndef	__EFFEKSEERRENDERER_DX9_RENDERER_H__
 #define	__EFFEKSEERRENDERER_DX9_RENDERER_H__
 
@@ -13,11 +13,22 @@
 //----------------------------------------------------------------------------------
 namespace EffekseerRendererDX9
 {
+
+/**
+@brief	ãƒ†ã‚¯ã‚¹ãƒãƒ£èª­è¾¼ã‚¯ãƒ©ã‚¹ã‚’ç”Ÿæˆã™ã‚‹ã€‚
+*/
+::Effekseer::TextureLoader* CreateTextureLoader(LPDIRECT3DDEVICE9 device, ::Effekseer::FileInterface* fileInterface = NULL);
+
+/**
+@brief	ãƒ¢ãƒ‡ãƒ«èª­è¾¼ã‚¯ãƒ©ã‚¹ã‚’ç”Ÿæˆã™ã‚‹ã€‚
+*/
+::Effekseer::ModelLoader* CreateModelLoader(LPDIRECT3DDEVICE9 device, ::Effekseer::FileInterface* fileInterface = NULL);
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 /**
-	@brief	•`‰æƒNƒ‰ƒX
+	@brief	æç”»ã‚¯ãƒ©ã‚¹
 */
 class Renderer
 	: public ::EffekseerRenderer::Renderer
@@ -28,30 +39,30 @@ protected:
 
 public:
 	/**
-		@brief	ƒCƒ“ƒXƒ^ƒ“ƒX‚ğ¶¬‚·‚éB
-		@param	device	[in]	DirectX‚ÌƒfƒoƒCƒX
-		@param	squareMaxCount	[in]	Å‘å•`‰æƒXƒvƒ‰ƒCƒg”
-		@return	ƒCƒ“ƒXƒ^ƒ“ƒX
+		@brief	ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’ç”Ÿæˆã™ã‚‹ã€‚
+		@param	device	[in]	DirectXã®ãƒ‡ãƒã‚¤ã‚¹
+		@param	squareMaxCount	[in]	æœ€å¤§æç”»ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆæ•°
+		@return	ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹
 	*/
 	static Renderer* Create( LPDIRECT3DDEVICE9 device, int32_t squareMaxCount );
 
 	/**
-		@brief	ƒfƒoƒCƒX‚ğæ“¾‚·‚éB
+		@brief	ãƒ‡ãƒã‚¤ã‚¹ã‚’å–å¾—ã™ã‚‹ã€‚
 	*/
 	virtual LPDIRECT3DDEVICE9 GetDevice() = 0;
 
 	/**
-		@brief	ƒfƒoƒCƒXƒƒXƒgƒŠƒZƒbƒgŠÔ‚ÅƒfƒoƒCƒX©‘Ì‚ğÄ\’z‚·‚éÛ‚ÉŠO•”‚©‚çƒfƒoƒCƒX‚ğİ’è‚·‚éB
+		@brief	ãƒ‡ãƒã‚¤ã‚¹ãƒ­ã‚¹ãƒˆãƒªã‚»ãƒƒãƒˆé–“ã§ãƒ‡ãƒã‚¤ã‚¹è‡ªä½“ã‚’å†æ§‹ç¯‰ã™ã‚‹éš›ã«å¤–éƒ¨ã‹ã‚‰ãƒ‡ãƒã‚¤ã‚¹ã‚’è¨­å®šã™ã‚‹ã€‚
 	*/
 	virtual void ChangeDevice( LPDIRECT3DDEVICE9 device ) = 0;
 
 	/**
-	@brief	”wŒi‚ğæ“¾‚·‚éB
+	@brief	èƒŒæ™¯ã‚’å–å¾—ã™ã‚‹ã€‚
 	*/
-	virtual IDirect3DTexture9* GetBackground() = 0;
+	virtual Effekseer::TextureData* GetBackground() = 0;
 
 	/**
-	@brief	”wŒi‚ğİ’è‚·‚éB
+	@brief	èƒŒæ™¯ã‚’è¨­å®šã™ã‚‹ã€‚
 	*/
 	virtual void SetBackground(IDirect3DTexture9* background) = 0;
 };
@@ -60,35 +71,51 @@ public:
 //
 //----------------------------------------------------------------------------------
 /**
-	@brief	ƒ‚ƒfƒ‹
+	@brief	ãƒ¢ãƒ‡ãƒ«
 */
 class Model : public Effekseer::Model
 {
 private:
 
 public:
-	IDirect3DVertexBuffer9*		VertexBuffer;
-	IDirect3DIndexBuffer9*		IndexBuffer;
-	int32_t						VertexCount;
-	int32_t						IndexCount;
-	int32_t						FaceCount;
+
+	struct InternalModel
+	{
+		IDirect3DVertexBuffer9*		VertexBuffer;
+		IDirect3DIndexBuffer9*		IndexBuffer;
+		int32_t						VertexCount;
+		int32_t						IndexCount;
+		int32_t						FaceCount;
+
+		InternalModel()
+		{
+			VertexBuffer = nullptr;
+			IndexBuffer = nullptr;
+			VertexCount = 0;
+			IndexCount = 0;
+			FaceCount = 0;
+		}
+
+		virtual ~InternalModel()
+		{
+			ES_SAFE_RELEASE(VertexBuffer);
+			ES_SAFE_RELEASE(IndexBuffer);
+		}
+	};
+
+	InternalModel*				InternalModels = nullptr;
 	int32_t						ModelCount;
 
 	Model( uint8_t* data, int32_t size )
 		: Effekseer::Model	( data, size )
-		, VertexBuffer	( NULL )
-		, IndexBuffer	( NULL )
-		, VertexCount		( 0 )
-		, IndexCount		( 0 )
-		, FaceCount			( 0 )
+		, InternalModels	(nullptr)
 		, ModelCount		( 0 )
 	{
 	}
 
 	virtual ~Model()
 	{
-		ES_SAFE_RELEASE( VertexBuffer );
-		ES_SAFE_RELEASE( IndexBuffer );
+		ES_SAFE_DELETE_ARRAY(InternalModels);
 	}
 };
 

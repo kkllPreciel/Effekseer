@@ -1,4 +1,4 @@
-
+﻿
 #ifndef	__EFFEKSEER_ParameterNODE_RING_H__
 #define	__EFFEKSEER_ParameterNODE_RING_H__
 
@@ -148,16 +148,18 @@ struct RingLocationValues
 struct RingColorValues
 {
 	color	current;
+	color	original;
+
 	union
 	{
 		struct
 		{
-	
+			color _color;
 		} fixed;
 
 		struct
 		{
-
+			color _color;
 		} random;
 
 		struct
@@ -172,7 +174,7 @@ struct RingColorValues
 //
 //----------------------------------------------------------------------------------
 class EffectNodeRing
-	: public EffectNode
+	: public EffectNodeImplemented
 {
 	friend class Manager;
 	friend class Effect;
@@ -212,7 +214,7 @@ public:
 	int RingTexture;
 
 	EffectNodeRing( Effect* effect, unsigned char*& pos )
-		: EffectNode( effect, pos )
+		: EffectNodeImplemented(effect, pos)
 	{
 	}
 
@@ -241,11 +243,11 @@ private:
 	
 	void LoadColorParameter( unsigned char*& pos, RingColorParameter& param );
 	
-	void InitializeSingleValues(const RingSingleParameter& param, RingSingleValues& values, Manager* manager);
+	void InitializeSingleValues(const RingSingleParameter& param, RingSingleValues& values, Manager* manager, InstanceGlobal* instanceGlobal);
 
-	void InitializeLocationValues(const RingLocationParameter& param, RingLocationValues& values, Manager* manager);
+	void InitializeLocationValues(const RingLocationParameter& param, RingLocationValues& values, Manager* manager, InstanceGlobal* instanceGlobal);
 	
-	void InitializeColorValues(const RingColorParameter& param, RingColorValues& values, Manager* manager);
+	void InitializeColorValues(const RingColorParameter& param, RingColorValues& values, Manager* manager, InstanceGlobal* instanceGlobal);
 	
 	void UpdateSingleValues( Instance& instance, const RingSingleParameter& param, RingSingleValues& values );
 	

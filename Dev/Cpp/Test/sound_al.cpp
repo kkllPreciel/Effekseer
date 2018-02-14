@@ -1,4 +1,4 @@
-
+ï»¿
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -41,10 +41,10 @@ extern ::Effekseer::Manager*	g_manager;
 //----------------------------------------------------------------------------------
 void InitSound()
 {
-	// OpenALƒfƒoƒCƒX‚ðì¬
+	// OpenALãƒ‡ãƒã‚¤ã‚¹ã‚’ä½œæˆ
 	g_alcdev = alcOpenDevice(NULL);
 
-	// OpenALƒRƒ“ƒeƒLƒXƒg‚ðì¬
+	// OpenALã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆã‚’ä½œæˆ
 	g_alcctx = alcCreateContext(g_alcdev, NULL);
 
 	alcMakeContextCurrent(g_alcctx);
@@ -62,7 +62,7 @@ void TermSound()
 {
 	if( g_sound != NULL )
 	{
-		g_sound->Destory();
+		g_sound->Destroy();
 		g_sound = NULL;
 	}
 

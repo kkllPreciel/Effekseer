@@ -1,4 +1,4 @@
-
+﻿
 #ifdef __EFFEKSEER_RENDERER_INTERNAL_LOADER__
 
 #ifndef	__EFFEKSEERRENDERER_DX9_MODELLOADER_H__
@@ -22,12 +22,12 @@ class ModelLoader
 	: public ::Effekseer::ModelLoader
 {
 private:
-	Renderer*	m_renderer;
+	LPDIRECT3DDEVICE9	device;
 	::Effekseer::FileInterface* m_fileInterface;
 	::Effekseer::DefaultFileInterface m_defaultFileInterface;
 
 public:
-	ModelLoader( Renderer* renderer, ::Effekseer::FileInterface* fileInterface );
+	ModelLoader(LPDIRECT3DDEVICE9 device, ::Effekseer::FileInterface* fileInterface );
 	virtual ~ModelLoader();
 
 public:

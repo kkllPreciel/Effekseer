@@ -1,4 +1,4 @@
-
+﻿
 #ifndef	__EFFEKSEER_ParameterNODE_RIBBON_H__
 #define	__EFFEKSEER_ParameterNODE_RIBBON_H__
 
@@ -100,25 +100,26 @@ struct RibbonPositionParameter
 //
 //----------------------------------------------------------------------------------
 class EffectNodeRibbon
-	: public EffectNode
+	: public EffectNodeImplemented
 {
 public:
 
 	struct InstanceValues
 	{
-		// �F
+		// 色
 		color _color;
+		color _original;
 
 		union 
 		{
 			struct
 			{
-			
+				color _color;
 			} fixed;
 
 			struct
 			{
-
+				color _color;
 			} random;
 
 			struct
@@ -157,7 +158,7 @@ public:
 	int RibbonTexture;
 
 	EffectNodeRibbon( Effect* effect, unsigned char*& pos )
-		: EffectNode( effect, pos )
+		: EffectNodeImplemented(effect, pos)
 	{
 	}
 

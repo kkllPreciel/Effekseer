@@ -200,6 +200,10 @@ namespace Effekseer
 		/// <param name="distance"></param>
 		void SetEffectDistance(float distance);
 
+		void SetAllColor(byte r, byte g, byte b, byte a);
+
+		void SetEffectTimeSpan(int timeSpan);
+
 		/// <summary>
 		/// グリッドを表示するか設定する。
 		/// </summary>
@@ -313,6 +317,12 @@ namespace Effekseer
 		/// </summary>
 		/// <param name="value"></param>
 		void SetIsRightHand(bool value);
+
+		/// <summary>
+		/// Set distortion type
+		/// </summary>
+		/// <param name="type"></param>
+		void SetDistortionType(int type);
 
 		/// <summary>
 		/// マウスでの画面回転方向を逆にするか?

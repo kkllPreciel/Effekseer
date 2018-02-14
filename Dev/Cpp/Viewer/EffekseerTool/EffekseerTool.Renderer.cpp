@@ -1,4 +1,4 @@
-
+ï»¿
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
@@ -7,6 +7,8 @@
 #include "EffekseerTool.Guide.h"
 #include "EffekseerTool.Culling.h"
 #include "EffekseerTool.Paste.h"
+
+#include "../EffekseerRendererCommon/EffekseerRenderer.PngTextureLoader.h"
 
 //----------------------------------------------------------------------------------
 //
@@ -19,7 +21,8 @@ namespace EffekseerTool
 	Renderer::DistortingCallback::DistortingCallback(Renderer* renderer)
 		: renderer(renderer)
 	{
-	
+		IsEnabled = true;
+		Blit = true;
 	}
 
 	Renderer::DistortingCallback::~DistortingCallback()
@@ -27,11 +30,15 @@ namespace EffekseerTool
 	
 	}
 
-	void Renderer::DistortingCallback::OnDistorting()
+	bool Renderer::DistortingCallback::OnDistorting()
 	{
+		if (Blit)
+		{
+			auto texture = renderer->ExportBackground();
+			renderer->m_renderer->SetBackground(texture);
+		}
 
-		auto texture = renderer->ExportBackground();
-		renderer->m_renderer->SetBackground(texture);
+		return IsEnabled;
 	}
 //----------------------------------------------------------------------------------
 //
@@ -61,6 +68,98 @@ void Renderer::GenerateRenderTargets(int32_t width, int32_t height)
 
 	m_renderEffectBackTargetTexture->GetSurfaceLevel(0, &m_renderEffectBackTarget);
 }
+
+void Renderer::LoadBackgroundImageInternal(void* data, int32_t size)
+{
+	ES_SAFE_RELEASE(m_backGroundTexture);
+
+	if (data != NULL && size > 4)
+	{
+		IDirect3DTexture9* texture = nullptr;
+
+		auto d = (uint8_t*)data;
+
+		if (d[1] == 'P' &&
+			d[2] == 'N' &&
+			d[3] == 'G')
+		{
+			if (::EffekseerRenderer::PngTextureLoader::Load(data, size, false))
+			{
+				HRESULT hr;
+				int32_t width = ::EffekseerRenderer::PngTextureLoader::GetWidth();
+				int32_t height = ::EffekseerRenderer::PngTextureLoader::GetHeight();
+				int32_t mipMapCount = 1;
+				hr = m_renderer->GetDevice()->CreateTexture(
+					width,
+					height,
+					mipMapCount,
+					0,
+					D3DFMT_A8R8G8B8,
+					D3DPOOL_DEFAULT,
+					&texture,
+					NULL);
+
+				if (FAILED(hr))
+				{
+					::EffekseerRenderer::PngTextureLoader::Unload();
+					return;
+				}
+
+				LPDIRECT3DTEXTURE9 tempTexture = NULL;
+				hr = m_renderer->GetDevice()->CreateTexture(
+					width,
+					height,
+					mipMapCount,
+					0,
+					D3DFMT_A8R8G8B8,
+					D3DPOOL_SYSTEMMEM,
+					&tempTexture,
+					NULL);
+
+				if (FAILED(hr))
+				{
+					::EffekseerRenderer::PngTextureLoader::Unload();
+					return;
+				}
+
+				uint8_t* srcBits = (uint8_t*)::EffekseerRenderer::PngTextureLoader::GetData().data();
+				D3DLOCKED_RECT locked;
+				if (SUCCEEDED(tempTexture->LockRect(0, &locked, NULL, 0)))
+				{
+					uint8_t* destBits = (uint8_t*)locked.pBits;
+
+					for (int32_t h = 0; h < height; h++)
+					{
+						memcpy(destBits, srcBits, width * 4);
+
+						// RGBå…¥ã‚Œæ›¿ãˆ
+						for (int32_t w = 0; w < width; w++)
+						{
+							std::swap(destBits[w * 4 + 0], destBits[w * 4 + 2]);
+						}
+
+						destBits += locked.Pitch;
+						srcBits += (width * 4);
+					}
+
+					tempTexture->UnlockRect(0);
+				}
+
+				hr = m_renderer->GetDevice()->UpdateTexture(tempTexture, texture);
+				ES_SAFE_RELEASE(tempTexture);
+
+				::EffekseerRenderer::PngTextureLoader::Unload();
+
+				ES_SAFE_RELEASE(m_backGroundTexture);
+				m_backGroundTexture = texture;
+			}
+		}
+	}
+	else
+	{
+	}
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -97,6 +196,8 @@ Renderer::Renderer(int32_t squareMaxCount, bool isSRGBMode)
 	, IsCullingShown	(false)
 	, CullingRadius		(0.0f)
 	, CullingPosition	()
+
+	, Distortion		(eDistortionType::DistortionType_Current)
 
 	, m_recording		( false )
 	, m_recordingTarget	( NULL )
@@ -141,7 +242,7 @@ Renderer::~Renderer()
 
 	if( m_renderer != NULL )
 	{
-		m_renderer->Destory();
+		m_renderer->Destroy();
 		m_renderer = NULL;
 	}
 
@@ -206,18 +307,19 @@ bool Renderer::Initialize( HWND handle, int width, int height )
 	m_width = width;
 	m_height = height;
 
+	m_distortionCallback = new DistortingCallback(this);
 	m_renderer = (::EffekseerRendererDX9::RendererImplemented*)::EffekseerRendererDX9::Renderer::Create( m_d3d_device, m_squareMaxCount );
-	m_renderer->SetDistortingCallback(new DistortingCallback(this));
+	m_renderer->SetDistortingCallback(m_distortionCallback);
 
-	// ƒOƒŠƒbƒh¶¬
+	// ã‚°ãƒªãƒƒãƒ‰ç”Ÿæˆ
 	m_grid = ::EffekseerRenderer::Grid::Create( m_renderer );
 
-	// ƒKƒCƒhì¬
+	// ã‚¬ã‚¤ãƒ‰ä½œæˆ
 	m_guide = ::EffekseerRenderer::Guide::Create( m_renderer );
 
 	m_culling = ::EffekseerRenderer::Culling::Create( m_renderer );
 
-	// ”wŒiì¬
+	// èƒŒæ™¯ä½œæˆ
 	m_background = ::EffekseerRenderer::Paste::Create( m_renderer );
 
 
@@ -250,7 +352,7 @@ bool Renderer::Present()
 {
 	HRESULT hr;
 
-	// ƒKƒ“ƒ}
+	// ã‚¬ãƒ³ãƒ
 	if (m_isSRGBMode)
 	{
 		IDirect3DSwapChain9* swapChain = nullptr;
@@ -267,21 +369,21 @@ bool Renderer::Present()
 
 	switch ( hr )
 	{
-		// ƒhƒ‰ƒCƒo“à•”‚ÌˆÓ–¡•s–¾‚ÈƒGƒ‰[
+		// ãƒ‰ãƒ©ã‚¤ãƒå†…éƒ¨ã®æ„å‘³ä¸æ˜ãªã‚¨ãƒ©ãƒ¼
 	case D3DERR_DRIVERINTERNALERROR:
 		return false;
 
-		// ƒfƒoƒCƒXƒƒXƒg
+		// ãƒ‡ãƒã‚¤ã‚¹ãƒ­ã‚¹ãƒˆ
 	case D3DERR_DEVICELOST:
 		while ( FAILED( hr = m_d3d_device->TestCooperativeLevel() ) )
 		{
 			switch ( hr )
 			{
-				// ƒfƒoƒCƒXƒƒXƒg
+				// ãƒ‡ãƒã‚¤ã‚¹ãƒ­ã‚¹ãƒˆ
 			case D3DERR_DEVICELOST:
 				::SleepEx( 1000, true );
 				break;
-				// ƒfƒoƒCƒXƒƒXƒgFƒŠƒZƒbƒg‰Â
+				// ãƒ‡ãƒã‚¤ã‚¹ãƒ­ã‚¹ãƒˆï¼šãƒªã‚»ãƒƒãƒˆå¯
 			case D3DERR_DEVICENOTRESET:
 				ResetDevice();
 				break;
@@ -299,6 +401,12 @@ bool Renderer::Present()
 void Renderer::ResetDevice()
 {
 	GenerateRenderTargets(0, 0);
+	ES_SAFE_RELEASE(m_backGroundTexture);
+
+	if (LostedDevice != nullptr)
+	{
+		LostedDevice();
+	}
 
 	m_renderer->OnLostDevice();
 
@@ -327,6 +435,12 @@ void Renderer::ResetDevice()
 
 	m_renderer->OnResetDevice();
 
+	if (ResettedDevice != nullptr)
+	{
+		ResettedDevice();
+	}
+
+	LoadBackgroundImageInternal(m_backGroundTextureBuffer.data(), m_backGroundTextureBuffer.size());
 	GenerateRenderTargets(m_width, m_height);
 }
 
@@ -364,12 +478,12 @@ void Renderer::SetPerspectiveFov( int width, int height )
 
 	if( IsRightHand )
 	{
-		// ‰Eè
+		// å³æ‰‹
 		proj.PerspectiveFovRH( 60.0f / 180.0f * 3.141592f, (float)width / (float)height, 1.0f, 300.0f );
 	}
 	else
 	{
-		// ¶è
+		// å·¦æ‰‹
 		proj.PerspectiveFovLH( 60.0f / 180.0f * 3.141592f, (float)width / (float)height, 1.0f, 300.0f );
 	}
 
@@ -388,12 +502,12 @@ void Renderer::SetOrthographic( int width, int height )
 
 	if( IsRightHand )
 	{
-		// ‰Eè
+		// å³æ‰‹
 		proj.OrthographicRH( (float)width / 16.0f / RateOfMagnification, (float)height / 16.0f / RateOfMagnification, 1.0f, 300.0f );
 	}
 	else
 	{
-		// ¶è
+		// å·¦æ‰‹
 		proj.OrthographicLH( (float)width / 16.0f / RateOfMagnification, (float)height / 16.0f / RateOfMagnification, 1.0f, 300.0f );
 	}
 
@@ -471,10 +585,10 @@ bool Renderer::BeginRendering()
 
 	if( FAILED( hr ) ) return false;
 
-	/* ”wŒi */
+	/* èƒŒæ™¯ */
 	if( !m_recording && m_backGroundTexture != NULL )
 	{
-		// ’l‚Í“K“–(”wŒi‚Í‰æ–ÊƒTƒCƒY‚Æˆê’v‚µ‚È‚¢‚Ì‚Å–â‘è‚È‚¢)
+		// å€¤ã¯é©å½“(èƒŒæ™¯ã¯ç”»é¢ã‚µã‚¤ã‚ºã¨ä¸€è‡´ã—ãªã„ã®ã§å•é¡Œãªã„)
 		m_background->Rendering(m_backGroundTexture, 1024, 1024);
 	}
 
@@ -497,7 +611,7 @@ bool Renderer::BeginRendering()
 		m_culling->Rendering( IsRightHand );
 	}
 
-	// ƒKƒCƒh•”•ª‚ª•`‰æ‚³‚ê‚é‚æ‚¤‚ÉŠg‘å
+	// ã‚¬ã‚¤ãƒ‰éƒ¨åˆ†ãŒæç”»ã•ã‚Œã‚‹ã‚ˆã†ã«æ‹¡å¤§
 	if (m_recording)
 	{
 		m_cameraMatTemp = m_renderer->GetCameraMatrix();
@@ -515,6 +629,26 @@ bool Renderer::BeginRendering()
 	if (m_isSRGBMode)
 	{
 		GetDevice()->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, TRUE);
+	}
+
+	// Distoriton
+	if (Distortion == eDistortionType::DistortionType_Current)
+	{
+		auto texture = ExportBackground();
+		m_renderer->SetBackground(texture);
+		m_distortionCallback->Blit = false;
+		m_distortionCallback->IsEnabled = true;
+	}
+	else if (Distortion == eDistortionType::DistortionType_Effekseer120)
+	{
+		m_distortionCallback->Blit = true;
+		m_distortionCallback->IsEnabled = true;
+	}
+	else
+	{
+		m_distortionCallback->Blit = false;
+		m_renderer->SetBackground(nullptr);
+		m_distortionCallback->IsEnabled = false;
 	}
 
 	m_renderer->BeginRendering();
@@ -688,7 +822,7 @@ void Renderer::EndRecord(std::vector<Effekseer::Color>& pixels, bool generateAlp
 			return v_;
 		};
 
-		// ‹­§“§–¾‰»
+		// å¼·åˆ¶é€æ˜åŒ–
 		for (int32_t y = 0; y < m_recordingHeight; y++)
 		{
 			for (int32_t x = 0; x < m_recordingWidth; x++)
@@ -751,15 +885,10 @@ void Renderer::EndRecord(std::vector<Effekseer::Color>& pixels, bool generateAlp
 //----------------------------------------------------------------------------------
 void Renderer::LoadBackgroundImage( void* data, int32_t size )
 {
-	ES_SAFE_RELEASE( m_backGroundTexture );
+	m_backGroundTextureBuffer.resize(size);
+	memcpy(m_backGroundTextureBuffer.data(), data, size);
 
-	if( data != NULL )
-	{
-		D3DXCreateTextureFromFileInMemory( m_renderer->GetDevice(), data, size, &m_backGroundTexture );
-	}
-	else
-	{
-	}
+	LoadBackgroundImageInternal(m_backGroundTextureBuffer.data(), m_backGroundTextureBuffer.size());
 }
 
 //----------------------------------------------------------------------------------

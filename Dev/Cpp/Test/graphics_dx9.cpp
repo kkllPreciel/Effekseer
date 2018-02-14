@@ -1,4 +1,4 @@
-
+ï»¿
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -38,7 +38,7 @@ public:
 		ES_SAFE_RELEASE( texture );
 	}
 
-	virtual void OnDistorting()
+	virtual bool OnDistorting() override
 	{
 		IDirect3DSurface9* targetSurface = nullptr;
 		IDirect3DSurface9* texSurface = nullptr;
@@ -57,6 +57,8 @@ public:
 		ES_SAFE_RELEASE( targetSurface );
 
 		renderer->SetBackground( texture );
+
+		return true;
 	}
 };
 
@@ -102,7 +104,7 @@ void InitGraphics(int width, int height )
 		&g_d3d_device );
 
 	
-	{// Žs¼–Í—l‚Ì”wŒi‰æ‘œ‚ðì‚é
+	{// å¸‚æ¾æ¨¡æ§˜ã®èƒŒæ™¯ç”»åƒã‚’ä½œã‚‹
 		g_d3d_device->CreateOffscreenPlainSurface( width, height, 
 			D3DFMT_X8R8G8B8, D3DPOOL_SYSTEMMEM, &g_d3d_clearing_image, NULL );
 		D3DLOCKED_RECT lockedRect;
@@ -133,7 +135,7 @@ void InitGraphics(int width, int height )
 //----------------------------------------------------------------------------------
 void TermGraphics()
 {
-	g_renderer->Destory();
+	g_renderer->Destroy();
 	
 	ES_SAFE_RELEASE( g_d3d_clearing_image );
 	ES_SAFE_RELEASE( g_d3d_device );

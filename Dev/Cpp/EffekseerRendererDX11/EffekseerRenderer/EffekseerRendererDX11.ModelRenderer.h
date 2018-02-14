@@ -1,4 +1,4 @@
-
+﻿
 #ifndef	__EFFEKSEERRENDERER_DX11_MODEL_RENDERER_H__
 #define	__EFFEKSEERRENDERER_DX11_MODEL_RENDERER_H__
 
@@ -54,6 +54,9 @@ public:
 
 public:
 	void BeginRendering(const efkModelNodeParam& parameter, int32_t count, void* userData);
+
+	virtual void Rendering(const efkModelNodeParam& parameter, const InstanceParameter& instanceParameter, void* userData) override;
+
 	void EndRendering( const efkModelNodeParam& parameter, void* userData );
 };
 //----------------------------------------------------------------------------------

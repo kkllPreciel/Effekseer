@@ -1,4 +1,4 @@
-
+Ôªø
 #ifdef __EFFEKSEER_RENDERER_INTERNAL_LOADER__
 
 //----------------------------------------------------------------------------------
@@ -10,6 +10,7 @@
 
 #include "../../EffekseerRendererCommon/EffekseerRenderer.DXTK.DDSTextureLoader.h"
 #include "../../EffekseerRendererCommon/EffekseerRenderer.PngTextureLoader.h"
+#include "../../EffekseerRendererCommon/EffekseerRenderer.DDSTextureLoader.h"
 
 //-----------------------------------------------------------------------------------
 //
@@ -19,14 +20,20 @@ namespace EffekseerRendererDX9
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-TextureLoader::TextureLoader( Renderer* renderer, ::Effekseer::FileInterface* fileInterface )
-	: m_renderer		( renderer )
+TextureLoader::TextureLoader(LPDIRECT3DDEVICE9 device, ::Effekseer::FileInterface* fileInterface )
+	: device			( device )
 	, m_fileInterface	( fileInterface )
 {
+	ES_SAFE_ADDREF(device);
+
 	if( m_fileInterface == NULL )
 	{
 		m_fileInterface = &m_defaultFileInterface;
 	}
+
+#ifdef __EFFEKSEER_RENDERER_INTERNAL_LOADER__
+	EffekseerRenderer::PngTextureLoader::Initialize();
+#endif
 }
 
 //----------------------------------------------------------------------------------
@@ -34,20 +41,25 @@ TextureLoader::TextureLoader( Renderer* renderer, ::Effekseer::FileInterface* fi
 //----------------------------------------------------------------------------------
 TextureLoader::~TextureLoader()
 {
+#ifdef __EFFEKSEER_RENDERER_INTERNAL_LOADER__
+	EffekseerRenderer::PngTextureLoader::Finalize();
+#endif
 
+	ES_SAFE_RELEASE(device);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType textureType)
+Effekseer::TextureData* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType textureType)
 {
 	std::unique_ptr<::Effekseer::FileReader> 
 		reader( m_fileInterface->OpenRead( path ) );
 	
 	if( reader.get() != NULL )
 	{
-		IDirect3DTexture9* texture = NULL;
+		IDirect3DTexture9* texture = nullptr;
+		Effekseer::TextureData* textureData = nullptr;
 
 		size_t size_texture = reader->GetLength();
 		char* data_texture = new char[size_texture];
@@ -66,11 +78,11 @@ void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType texture
 				int32_t width = ::EffekseerRenderer::PngTextureLoader::GetWidth();
 				int32_t height = ::EffekseerRenderer::PngTextureLoader::GetHeight();
 				int32_t mipMapCount = 1;
-				hr = m_renderer->GetDevice()->CreateTexture( 
+				hr = device->CreateTexture( 
 					width,
 					height,
 					mipMapCount,
-					0,
+					D3DUSAGE_AUTOGENMIPMAP,
 					D3DFMT_A8R8G8B8,
 					D3DPOOL_DEFAULT,
 					&texture,
@@ -78,13 +90,12 @@ void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType texture
 
 				if(FAILED(hr))
 				{
-					delete [] data_texture;
 					::EffekseerRenderer::PngTextureLoader::Unload();
-					return (void*)texture;
+					goto Exit;
 				}
 
 				LPDIRECT3DTEXTURE9 tempTexture = NULL;
-				hr = m_renderer->GetDevice()->CreateTexture( 
+				hr = device->CreateTexture( 
 					width,
 					height,
 					mipMapCount,
@@ -96,9 +107,8 @@ void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType texture
 
 				if(FAILED(hr))
 				{
-					delete [] data_texture;
 					::EffekseerRenderer::PngTextureLoader::Unload();
-					return (void*)texture;
+					goto Exit;
 				}
 
 				uint8_t* srcBits = (uint8_t*)::EffekseerRenderer::PngTextureLoader::GetData().data();
@@ -111,7 +121,7 @@ void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType texture
 					{
 						memcpy( destBits, srcBits, width * 4 );
 
-						// RGBì¸ÇÍë÷Ç¶
+						// RGBÂÖ•„ÇåÊõø„Åà
 						for( int32_t w = 0; w < width; w++ )
 						{
 							std::swap( destBits[w * 4 + 0], destBits[w * 4 + 2]);
@@ -124,10 +134,17 @@ void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType texture
 					tempTexture->UnlockRect( 0 );
 				}
 
-				hr = m_renderer->GetDevice()->UpdateTexture( tempTexture, texture );
+				hr = device->UpdateTexture( tempTexture, texture );
 				ES_SAFE_RELEASE( tempTexture );
 
 				::EffekseerRenderer::PngTextureLoader::Unload();
+
+				textureData = new Effekseer::TextureData();
+				textureData->UserPtr = texture;
+				textureData->UserID = 0;
+				textureData->TextureFormat = Effekseer::TextureFormatType::ABGR8;
+				textureData->Width = width;
+				textureData->Height = height;
 			}
 		}
 		else if( data_texture[0] == 'D' &&
@@ -136,14 +153,25 @@ void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType texture
 			data_texture[3] == ' ')
 		{
 			EffekseerDirectX::CreateDDSTextureFromMemory(
-				m_renderer->GetDevice(),
+				device,
 				(uint8_t*)data_texture,
 				size_texture,
 				texture );
+
+			// To get texture size, use loader
+			EffekseerRenderer::DDSTextureLoader::Load(data_texture, size_texture);
+
+			textureData = new Effekseer::TextureData();
+			textureData->UserPtr = texture;
+			textureData->UserID = 0;
+			textureData->TextureFormat = EffekseerRenderer::DDSTextureLoader::GetTextureFormat();
+			textureData->Width = EffekseerRenderer::DDSTextureLoader::GetWidth();
+			textureData->Height = EffekseerRenderer::DDSTextureLoader::GetHeight();
 		}
 
+	Exit:;
 		delete [] data_texture;
-		return (void*)texture;
+		return textureData;
 	}
 
 	return NULL;
@@ -152,12 +180,17 @@ void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType texture
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void TextureLoader::Unload( void* data )
+void TextureLoader::Unload(Effekseer::TextureData* data)
 {
-	if( data != NULL )
+	if( data != nullptr && data->UserPtr != nullptr)
 	{
-		IDirect3DTexture9* texture = (IDirect3DTexture9*)data;
+		IDirect3DTexture9* texture = (IDirect3DTexture9*)data->UserPtr;
 		texture->Release();
+	}
+
+	if (data != nullptr)
+	{
+		delete data;
 	}
 }
 

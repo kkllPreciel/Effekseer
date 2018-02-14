@@ -1,4 +1,4 @@
-
+﻿
 
 //----------------------------------------------------------------------------------
 //
@@ -7,7 +7,11 @@
 #include "Effekseer.Effect.h"
 #include "Effekseer.EffectNode.h"
 #include "Effekseer.Vector3D.h"
+
 #include "Effekseer.Instance.h"
+#include "Effekseer.InstanceContainer.h"
+#include "Effekseer.InstanceGlobal.h"
+
 #include "Effekseer.EffectNodeModel.h"
 
 #include "Renderer/Effekseer.ModelRenderer.h"
@@ -32,7 +36,7 @@ namespace Effekseer
 
 	int32_t size = 0;
 
-	AlphaBlend = Texture.AlphaBlend;
+	AlphaBlend = RendererCommon.AlphaBlend;
 
 	if( m_effect->GetVersion() >= 7 )
 	{
@@ -47,6 +51,16 @@ namespace Effekseer
 	memcpy( &NormalTextureIndex, pos, sizeof(int) );
 	pos += sizeof(int);
 	EffekseerPrintDebug("NormalTextureIndex : %d\n", NormalTextureIndex );
+
+	if (m_effect->GetVersion() >= 12)
+	{
+		memcpy(&Billboard, pos, sizeof(int));
+		pos += sizeof(int);
+	}
+	else
+	{
+		Billboard = BillboardType::Fixed;
+	}
 
 	int32_t lighting;
 	memcpy( &lighting, pos, sizeof(int) );
@@ -69,22 +83,27 @@ void EffectNodeModel::BeginRendering(int32_t count, Manager* manager)
 	{
 		ModelRenderer::NodeParameter nodeParameter;
 		nodeParameter.AlphaBlend = AlphaBlend;
-		nodeParameter.TextureFilter = Texture.FilterType;
-		nodeParameter.TextureWrap = Texture.WrapType;
-		nodeParameter.ZTest = Texture.ZTest;
-		nodeParameter.ZWrite = Texture.ZWrite;
+		nodeParameter.TextureFilter = RendererCommon.FilterType;
+		nodeParameter.TextureWrap = RendererCommon.WrapType;
+		nodeParameter.ZTest = RendererCommon.ZTest;
+		nodeParameter.ZWrite = RendererCommon.ZWrite;
 		nodeParameter.EffectPointer = GetEffect();
 		nodeParameter.ModelIndex = ModelIndex;
-		nodeParameter.ColorTextureIndex = Texture.ColorTextureIndex;
+		nodeParameter.ColorTextureIndex = RendererCommon.ColorTextureIndex;
 		nodeParameter.Culling = Culling;
+		nodeParameter.Billboard = Billboard;
 		nodeParameter.Lighting = Lighting;
 		nodeParameter.NormalTextureIndex = NormalTextureIndex;
 		nodeParameter.Magnification = m_effect->GetMaginification();
 		nodeParameter.IsRightHand = manager->GetCoordinateSystem() ==
 			CoordinateSystem::RH;
 
-		nodeParameter.Distortion = Texture.Distortion;
-		nodeParameter.DistortionIntensity = Texture.DistortionIntensity;
+		nodeParameter.Distortion = RendererCommon.Distortion;
+		nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
+
+		nodeParameter.DepthOffset = DepthValues.DepthOffset;
+		nodeParameter.IsDepthOffsetScaledWithCamera = DepthValues.IsDepthOffsetScaledWithCamera;
+		nodeParameter.IsDepthOffsetScaledWithParticleScale = DepthValues.IsDepthOffsetScaledWithParticleScale;
 
 		renderer->BeginRendering(nodeParameter, count, m_userData);
 	}
@@ -101,34 +120,50 @@ void EffectNodeModel::Rendering(const Instance& instance, Manager* manager)
 	{
 		ModelRenderer::NodeParameter nodeParameter;
 		nodeParameter.AlphaBlend = AlphaBlend;
-		nodeParameter.TextureFilter = Texture.FilterType;
-		nodeParameter.TextureWrap = Texture.WrapType;
-		nodeParameter.ZTest = Texture.ZTest;
-		nodeParameter.ZWrite = Texture.ZWrite;
+		nodeParameter.TextureFilter = RendererCommon.FilterType;
+		nodeParameter.TextureWrap = RendererCommon.WrapType;
+		nodeParameter.ZTest = RendererCommon.ZTest;
+		nodeParameter.ZWrite = RendererCommon.ZWrite;
 		nodeParameter.EffectPointer = GetEffect();
 		nodeParameter.ModelIndex = ModelIndex;
-		nodeParameter.ColorTextureIndex = Texture.ColorTextureIndex;
+		nodeParameter.ColorTextureIndex = RendererCommon.ColorTextureIndex;
 		nodeParameter.Culling = Culling;
+		nodeParameter.Billboard = Billboard;
 		nodeParameter.Lighting = Lighting;
 		nodeParameter.NormalTextureIndex = NormalTextureIndex;
 		nodeParameter.Magnification = m_effect->GetMaginification();
 		nodeParameter.IsRightHand = manager->GetCoordinateSystem() ==
 			CoordinateSystem::RH;
 
-		nodeParameter.Distortion = Texture.Distortion;
-		nodeParameter.DistortionIntensity = Texture.DistortionIntensity;
+		nodeParameter.Distortion = RendererCommon.Distortion;
+		nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
 
+		nodeParameter.DepthOffset = DepthValues.DepthOffset;
+		nodeParameter.IsDepthOffsetScaledWithCamera = DepthValues.IsDepthOffsetScaledWithCamera;
+		nodeParameter.IsDepthOffsetScaledWithParticleScale = DepthValues.IsDepthOffsetScaledWithParticleScale;
 
 		ModelRenderer::InstanceParameter instanceParameter;
 		instanceParameter.SRTMatrix43 = instance.GetGlobalMatrix43();
+		instanceParameter.Time = instance.m_LivingTime;
 
 		instanceParameter.UV = instance.GetUV();
 		
-		instValues._color.setValueToArg( instanceParameter.AllColor );
-		float fadeAlpha = GetFadeAlpha( instance );
-		if( fadeAlpha != 1.0f )
+		color _color;
+		if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
 		{
-			instanceParameter.AllColor.A = (uint8_t)(instanceParameter.AllColor.A * fadeAlpha);
+			_color = color::mul(instValues._original, instance.ColorParent);
+		}
+		else
+		{
+			_color = instValues._original;
+		}
+
+		_color.setValueToArg( instanceParameter.AllColor );
+
+		// Apply global color
+		if (instance.m_pContainer->GetRootInstance()->IsGlobalColorSet)
+		{
+			Color::Mul(instanceParameter.AllColor, instanceParameter.AllColor, instance.m_pContainer->GetRootInstance()->GlobalColor);
 		}
 
 		renderer->Rendering( nodeParameter, instanceParameter, m_userData );
@@ -145,22 +180,27 @@ void EffectNodeModel::EndRendering(Manager* manager)
 	{
 		ModelRenderer::NodeParameter nodeParameter;
 		nodeParameter.AlphaBlend = AlphaBlend;
-		nodeParameter.TextureFilter = Texture.FilterType;
-		nodeParameter.TextureWrap = Texture.WrapType;
-		nodeParameter.ZTest = Texture.ZTest;
-		nodeParameter.ZWrite = Texture.ZWrite;
+		nodeParameter.TextureFilter = RendererCommon.FilterType;
+		nodeParameter.TextureWrap = RendererCommon.WrapType;
+		nodeParameter.ZTest = RendererCommon.ZTest;
+		nodeParameter.ZWrite = RendererCommon.ZWrite;
 		nodeParameter.EffectPointer = GetEffect();
 		nodeParameter.ModelIndex = ModelIndex;
-		nodeParameter.ColorTextureIndex = Texture.ColorTextureIndex;
+		nodeParameter.ColorTextureIndex = RendererCommon.ColorTextureIndex;
 		nodeParameter.Culling = Culling;
+		nodeParameter.Billboard = Billboard;
 		nodeParameter.Lighting = Lighting;
 		nodeParameter.NormalTextureIndex = NormalTextureIndex;
 		nodeParameter.Magnification = m_effect->GetMaginification();
 		nodeParameter.IsRightHand = manager->GetSetting()->GetCoordinateSystem() ==
 			CoordinateSystem::RH;
 
-		nodeParameter.Distortion = Texture.Distortion;
-		nodeParameter.DistortionIntensity = Texture.DistortionIntensity;
+		nodeParameter.Distortion = RendererCommon.Distortion;
+		nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
+
+		nodeParameter.DepthOffset = DepthValues.DepthOffset;
+		nodeParameter.IsDepthOffsetScaledWithCamera = DepthValues.IsDepthOffsetScaledWithCamera;
+		nodeParameter.IsDepthOffsetScaledWithParticleScale = DepthValues.IsDepthOffsetScaledWithParticleScale;
 
 		renderer->EndRendering( nodeParameter, m_userData );
 	}
@@ -172,40 +212,54 @@ void EffectNodeModel::EndRendering(Manager* manager)
 void EffectNodeModel::InitializeRenderedInstance(Instance& instance, Manager* manager)
 {
 	InstanceValues& instValues = instance.rendererValues.model;
+	auto instanceGlobal = instance.m_pContainer->GetRootInstance();
 
 	if( AllColor.type == StandardColorParameter::Fixed )
 	{
-		instValues._color = AllColor.fixed.all;
+		instValues._original = AllColor.fixed.all;
+		instValues.allColorValues.fixed._color = instValues._original;
 	}
 	else if( AllColor.type == StandardColorParameter::Random )
 	{
-		instValues._color = AllColor.random.all.getValue(*(manager));
+		instValues._original = AllColor.random.all.getValue(*instanceGlobal);
+		instValues.allColorValues.random._color = instValues._original;
 	}
 	else if( AllColor.type == StandardColorParameter::Easing )
 	{
-		instValues.allColorValues.easing.start = AllColor.easing.all.getStartValue(*(manager));
-		instValues.allColorValues.easing.end = AllColor.easing.all.getEndValue(*(manager));
+		instValues.allColorValues.easing.start = AllColor.easing.all.getStartValue(*instanceGlobal);
+		instValues.allColorValues.easing.end = AllColor.easing.all.getEndValue(*instanceGlobal);
 
 		float t = instance.m_LivingTime / instance.m_LivedTime;
 
 		AllColor.easing.all.setValueToArg(
-			instValues._color, 
+			instValues._original,
 			instValues.allColorValues.easing.start,
 			instValues.allColorValues.easing.end,
 			t );
 	}
 	else if( AllColor.type == StandardColorParameter::FCurve_RGBA )
 	{
-		instValues.allColorValues.fcurve_rgba.offset[0] = AllColor.fcurve_rgba.FCurve->R.GetOffset(*(manager));
-		instValues.allColorValues.fcurve_rgba.offset[1] = AllColor.fcurve_rgba.FCurve->G.GetOffset(*(manager));
-		instValues.allColorValues.fcurve_rgba.offset[2] = AllColor.fcurve_rgba.FCurve->B.GetOffset(*(manager));
-		instValues.allColorValues.fcurve_rgba.offset[3] = AllColor.fcurve_rgba.FCurve->A.GetOffset(*(manager));
+		instValues.allColorValues.fcurve_rgba.offset[0] = AllColor.fcurve_rgba.FCurve->R.GetOffset(*instanceGlobal);
+		instValues.allColorValues.fcurve_rgba.offset[1] = AllColor.fcurve_rgba.FCurve->G.GetOffset(*instanceGlobal);
+		instValues.allColorValues.fcurve_rgba.offset[2] = AllColor.fcurve_rgba.FCurve->B.GetOffset(*instanceGlobal);
+		instValues.allColorValues.fcurve_rgba.offset[3] = AllColor.fcurve_rgba.FCurve->A.GetOffset(*instanceGlobal);
 		
-		instValues._color.r = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + AllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._color.g = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + AllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._color.b = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + AllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._color.a = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + AllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.r = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + AllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.g = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + AllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.b = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + AllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.a = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + AllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
 	}
+
+	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
+	{
+		instValues._color = color::mul(instValues._original, instance.ColorParent);
+	}
+	else
+	{
+		instValues._color = instValues._original;
+	}
+
+	instance.ColorInheritance = instValues._color;
 }
 
 //----------------------------------------------------------------------------------
@@ -215,23 +269,48 @@ void EffectNodeModel::UpdateRenderedInstance(Instance& instance, Manager* manage
 {
 	InstanceValues& instValues = instance.rendererValues.model;
 
-	if( AllColor.type == StandardColorParameter::Easing )
+	if (AllColor.type == StandardColorParameter::Fixed)
+	{
+		instValues._original = instValues.allColorValues.fixed._color;
+	}
+	else if (AllColor.type == StandardColorParameter::Random)
+	{
+		instValues._original = instValues.allColorValues.random._color;
+	}
+	else if( AllColor.type == StandardColorParameter::Easing )
 	{
 		float t = instance.m_LivingTime / instance.m_LivedTime;
 
 		AllColor.easing.all.setValueToArg(
-			instValues._color, 
+			instValues._original,
 			instValues.allColorValues.easing.start,
 			instValues.allColorValues.easing.end,
 			t );
 	}
 	else if( AllColor.type == StandardColorParameter::FCurve_RGBA )
 	{
-		instValues._color.r = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + AllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._color.g = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + AllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._color.b = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + AllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._color.a = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + AllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.r = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + AllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.g = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + AllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.b = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + AllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.a = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + AllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
 	}
+
+	float fadeAlpha = GetFadeAlpha(instance);
+	if (fadeAlpha != 1.0f)
+	{
+		instValues._original.a = (uint8_t)(instValues._original.a * fadeAlpha);
+	}
+
+	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
+	{
+		instValues._color = color::mul(instValues._original, instance.ColorParent);
+	}
+	else
+	{
+		instValues._color = instValues._original;
+	}
+
+	instance.ColorInheritance = instValues._color;
 }
 
 //----------------------------------------------------------------------------------

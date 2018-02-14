@@ -1,4 +1,4 @@
-
+ï»¿
 #ifndef	__EFFEKSEER_EFFECTNODE_H__
 #define	__EFFEKSEER_EFFECTNODE_H__
 
@@ -10,8 +10,10 @@
 #include "Effekseer.Vector3D.h"
 #include "Effekseer.RectF.h"
 #include "Effekseer.InternalStruct.h"
-#include "Sound/Effekseer.SoundPlayer.h"
 #include "Effekseer.FCurves.h"
+#include "Sound/Effekseer.SoundPlayer.h"
+
+#include "Effekseer.Effect.h"
 
 //----------------------------------------------------------------------------------
 //
@@ -21,14 +23,12 @@ namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-enum BindType
+enum class BindType : int32_t
 {
-	BindType_NotBind = 0,
-	BindType_NotBind_Root = 3,
-	BindType_WhenCreating = 1,
-	BindType_Always = 2,
-
-	BindType_DWORD = 0x7fffffff,
+	NotBind = 0,
+	NotBind_Root = 3,
+	WhenCreating = 1,
+	Always = 2,
 };
 
 //----------------------------------------------------------------------------------
@@ -137,6 +137,22 @@ struct ParameterCommonValues
 	random_int	life;
 	random_float GenerationTime;
 	random_float GenerationTimeOffset;
+};
+
+struct ParameterDepthValues
+{
+	float	DepthOffset;
+	bool	IsDepthOffsetScaledWithCamera;
+	bool	IsDepthOffsetScaledWithParticleScale;
+	float	SoftParticle;
+
+	ParameterDepthValues()
+	{
+		DepthOffset = 0;
+		IsDepthOffsetScaledWithCamera = false;
+		IsDepthOffsetScaledWithParticleScale = false;
+		SoftParticle = 0.0f;
+	}
 };
 
 //----------------------------------------------------------------------------------
@@ -313,12 +329,20 @@ struct ParameterGenerationLocation
 {
 	int	EffectsRotation;
 
+	enum class AxisType : int32_t
+	{
+		X,
+		Y,
+		Z,
+	};
+
 	enum
 	{
 		TYPE_POINT = 0,
 		TYPE_SPHERE = 1,
 		TYPE_MODEL = 2,
 		TYPE_CIRCLE = 3,
+		TYPE_LINE = 4,
 
 		TYPE_DWORD = 0x7fffffff,
 	} type;
@@ -339,6 +363,12 @@ struct ParameterGenerationLocation
 		CIRCLE_TYPE_RANDOM = 0,
 		CIRCLE_TYPE_ORDER = 1,
 		CIRCLE_TYPE_REVERSE_ORDER = 2,
+	};
+
+	enum class LineType : int32_t
+	{
+		Random = 0,
+		Order = 1,
 	};
 
 	union
@@ -368,10 +398,21 @@ struct ParameterGenerationLocation
 			random_float	angle_start;
 			random_float	angle_end;
 			eCircleType		type;
+			AxisType		axisDirection;
+			random_float	angle_noize;
 		} circle;
+
+		struct
+		{
+			int32_t			division;
+			random_vector3d	position_start;
+			random_vector3d	position_end;
+			random_float	position_noize;
+			LineType		type;
+		} line;
 	};
 
-	void load( uint8_t*& pos )
+	void load( uint8_t*& pos, int32_t version)
 	{
 		memcpy( &EffectsRotation, pos, sizeof(int) );
 		pos += sizeof(int);
@@ -396,23 +437,36 @@ struct ParameterGenerationLocation
 		}
 		else if( type == TYPE_CIRCLE )
 		{
-			memcpy( &circle, pos, sizeof(circle) );
-			pos += sizeof(circle);
+			if (version < 10)
+			{
+				memcpy(&circle, pos, sizeof(circle) - sizeof(circle.axisDirection) - sizeof(circle.angle_noize));
+				pos += sizeof(circle) - sizeof(circle.axisDirection) - sizeof(circle.angle_noize);
+				circle.axisDirection = AxisType::Z;
+				circle.angle_noize.max = 0;
+				circle.angle_noize.min = 0;
+			}
+			else
+			{
+				memcpy(&circle, pos, sizeof(circle));
+				pos += sizeof(circle);
+			}
+		}
+		else if (type == TYPE_LINE)
+		{
+			memcpy(&line, pos, sizeof(line));
+			pos += sizeof(line);
 		}
 	}
 };
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-struct ParameterTexture
+struct ParameterRendererCommon
 {
 	int32_t				ColorTextureIndex;
-	AlphaBlendType	AlphaBlend;
+	AlphaBlendType		AlphaBlend;
 
 	TextureFilterType	FilterType;
 
-	TextureWrapType	WrapType;
+	TextureWrapType		WrapType;
 
 	bool				ZWrite;
 
@@ -421,6 +475,8 @@ struct ParameterTexture
 	bool				Distortion;
 
 	float				DistortionIntensity;
+	
+	BindType			ColorBindType;
 
 	enum
 	{
@@ -456,9 +512,22 @@ struct ParameterTexture
 		UV_FIXED = 1,
 		UV_ANIMATION = 2,
 		UV_SCROLL = 3,
+		UV_FCURVE = 4,
 
 		UV_DWORD = 0x7fffffff,
 	} UVType;
+
+
+	/**
+		@brief	UV Parameter
+		@note
+		for Compatibility
+	*/
+	struct UVScroll_09
+	{
+		rectf		Position;
+		vector2d	Speed;
+	};
 
 	union
 	{
@@ -487,24 +556,33 @@ struct ParameterTexture
 				LOOPTYPE_DWORD = 0x7fffffff,
 			} LoopType;
 
+			random_int	StartFrame;
+
 		} Animation;
 
 		struct
 		{
-			rectf		Position;
-			vector2d	Speed;
+			random_vector2d	Position;
+			random_vector2d	Size;
+			random_vector2d	Speed;
 		} Scroll;
+
+		struct
+		{
+			FCurveVector2D* Position;
+			FCurveVector2D* Size;
+		} FCurve;
 
 	} UV;
 
 	void reset()
 	{
-		memset( this, 0, sizeof(ParameterTexture) );
+		memset( this, 0, sizeof(ParameterRendererCommon) );
 	}
 
 	void load( uint8_t*& pos, int32_t version )
 	{
-		memset( this, 0, sizeof(ParameterTexture) );
+		memset( this, 0, sizeof(ParameterRendererCommon) );
 
 		memcpy( &ColorTextureIndex, pos, sizeof(int) );
 		pos += sizeof(int);
@@ -568,13 +646,63 @@ struct ParameterTexture
 		}
 		else if( UVType == UV_ANIMATION )
 		{
-			memcpy( &UV.Animation, pos, sizeof(UV.Animation) );
-			pos += sizeof(UV.Animation);
+			if (version < 10)
+			{
+				// without start frame
+				memcpy(&UV.Animation, pos, sizeof(UV.Animation) - sizeof(UV.Animation.StartFrame));
+				pos += sizeof(UV.Animation) - sizeof(UV.Animation.StartFrame);
+				UV.Animation.StartFrame.max = 0;
+				UV.Animation.StartFrame.min = 0;
+			}
+			else
+			{
+				memcpy(&UV.Animation, pos, sizeof(UV.Animation));
+				pos += sizeof(UV.Animation);
+			}
 		}
 		else if( UVType == UV_SCROLL )
 		{
-			memcpy( &UV.Scroll, pos, sizeof(UV.Scroll) );
-			pos += sizeof(UV.Scroll);
+			if (version < 10)
+			{
+				// compatibility
+				UVScroll_09 values;
+				memcpy(&values, pos, sizeof(values));
+				pos += sizeof(values);
+				UV.Scroll.Position.max.x = values.Position.x;
+				UV.Scroll.Position.max.y = values.Position.y;
+				UV.Scroll.Position.min = UV.Scroll.Position.max;
+
+				UV.Scroll.Size.max.x = values.Position.w;
+				UV.Scroll.Size.max.y = values.Position.h;
+				UV.Scroll.Size.min = UV.Scroll.Size.max;
+
+				UV.Scroll.Speed.max.x = values.Speed.x;
+				UV.Scroll.Speed.max.y = values.Speed.y;
+				UV.Scroll.Speed.min = UV.Scroll.Speed.max;
+
+			}
+			else
+			{
+				memcpy(&UV.Scroll, pos, sizeof(UV.Scroll));
+				pos += sizeof(UV.Scroll);
+			}
+		}
+		else if (UVType == UV_FCURVE)
+		{
+			UV.FCurve.Position = new FCurveVector2D();
+			UV.FCurve.Size = new FCurveVector2D();
+			pos += UV.FCurve.Position->Load(pos, version);
+			pos += UV.FCurve.Size->Load(pos, version);
+		}
+
+		if (version >= 10)
+		{
+			memcpy(&ColorBindType, pos, sizeof(int32_t));
+			pos += sizeof(int32_t);
+		}
+		else
+		{
+			ColorBindType = BindType::NotBind;
 		}
 
 		if (version >= 9)
@@ -589,6 +717,15 @@ struct ParameterTexture
 			memcpy(&DistortionIntensity, pos, sizeof(float));
 			pos += sizeof(float);
 			
+		}
+	}
+
+	void destroy()
+	{
+		if (UVType == UV_FCURVE)
+		{
+			ES_SAFE_DELETE(UV.FCurve.Position);
+			ES_SAFE_DELETE(UV.FCurve.Size);
 		}
 	}
 };
@@ -645,42 +782,48 @@ enum eRenderingOrder
 //----------------------------------------------------------------------------------
 
 /**
-	@brief	ƒm[ƒhƒCƒ“ƒXƒ^ƒ“ƒX¶¬ƒNƒ‰ƒX
+	@brief	ãƒãƒ¼ãƒ‰ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ç”Ÿæˆã‚¯ãƒ©ã‚¹
 	@note
-	ƒGƒtƒFƒNƒg‚Ìƒm[ƒh‚ÌÀ‘Ì‚ğ¶¬‚·‚éB
+	ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã®ãƒãƒ¼ãƒ‰ã®å®Ÿä½“ã‚’ç”Ÿæˆã™ã‚‹ã€‚
 */
-class EffectNode
+class EffectNodeImplemented
+	: public EffectNode
 {
 	friend class Manager;
 	friend class EffectImplemented;
 	friend class Instance;
 
 protected:
-	// Š‘®‚µ‚Ä‚¢‚éƒpƒ‰ƒ[ƒ^[
+	// æ‰€å±ã—ã¦ã„ã‚‹ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼
 	Effect*	m_effect;
 
-	// qƒm[ƒh
-	std::vector<EffectNode*>	m_Nodes;
+	// å­ãƒãƒ¼ãƒ‰
+	std::vector<EffectNodeImplemented*>	m_Nodes;
 
-	// ƒ†[ƒU[ƒf[ƒ^
+	// ãƒ¦ãƒ¼ã‚¶ãƒ¼ãƒ‡ãƒ¼ã‚¿
 	void* m_userData;
 
-	// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
-	EffectNode( Effect* effect, unsigned char*& pos );
+	// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
+	EffectNodeImplemented(Effect* effect, unsigned char*& pos);
 
-	// ƒfƒXƒgƒ‰ƒNƒ^
-	virtual ~EffectNode();
+	// ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
+	virtual ~EffectNodeImplemented();
 
-	// “Ç
+	// èª­è¾¼
 	void LoadParameter( unsigned char*& pos, EffectNode* parent, Setting* setting );
 
-	// ‰Šú‰»
+	// åˆæœŸåŒ–
 	void Initialize();
 
 public:
 
 	/**
-		@brief	•`‰æ‚·‚é‚©?
+		@brief	\~english Whether to draw the node.
+				\~japanese ã“ã®ãƒãƒ¼ãƒ‰ã‚’æç”»ã™ã‚‹ã‹?
+
+		@note
+		\~english æ™®é€šã¯æç”»ã•ã‚Œãªã„ãƒãƒ¼ãƒ‰ã¯ã€æç”»ã®ç¨®é¡ãŒå¤‰æ›´ã•ã‚Œã¦ã€æç”»ã—ãªã„ãƒãƒ¼ãƒ‰ã«ãªã‚‹ã€‚ãŸã ã—ã€è‰²ã®ç¶™æ‰¿ã‚’ã™ã‚‹å ´åˆã€æç”»ã®ã¿ã‚’è¡Œã‚ãªã„ãƒãƒ¼ãƒ‰ã«ãªã‚‹ã€‚
+		\~japanese For nodes that are not normally rendered, the rendering type is changed to become a node that does not render. However, when color inheritance is done, it becomes a node which does not perform drawing only.
 	*/
 	bool IsRendered;
 
@@ -713,90 +856,84 @@ public:
 
 	ParameterGenerationLocation	GenerationLocation;
 
-	ParameterTexture			Texture;
+	ParameterDepthValues		DepthValues;
+
+	ParameterRendererCommon		RendererCommon;
 
 	ParameterSoundType			SoundType;
 	ParameterSound				Sound;
 
 	eRenderingOrder				RenderingOrder;
 
-	/**
-		@biref	ƒIƒvƒVƒ‡ƒ““Ç‚İ‚İ
-	*/
-	void LoadOption( uint8_t*& pos );
+	Effect* GetEffect() const override;
+
+	int GetChildrenCount() const override;
+
+	EffectNode* GetChild( int index ) const override;
+
+	EffectBasicRenderParameter GetBasicRenderParameter() override;
+
+	void SetBasicRenderParameter(EffectBasicRenderParameter param) override;
+
+	EffectModelParameter GetEffectModelParameter() override;
 
 	/**
-		@brief	Š‘®‚µ‚Ä‚¢‚éƒGƒtƒFƒNƒg‚Ìæ“¾
-	*/
-	Effect* GetEffect() const;
-
-	/**
-		@brief	q‚Ì”æ“¾
-	*/
-	int GetChildrenCount() const;
-
-	/**
-		@brief	q‚Ìæ“¾
-	*/
-	EffectNode* GetChild( int num ) const;
-
-	/**
-		@brief	•`‰æ•”•ª‚Ì“Ç
+		@brief	æç”»éƒ¨åˆ†ã®èª­è¾¼
 	*/
 	virtual void LoadRendererParameter(unsigned char*& pos, Setting* setting);
 
 	/**
-		@brief	•`‰æŠJn
+		@brief	æç”»é–‹å§‹
 	*/
 	virtual void BeginRendering(int32_t count, Manager* manager);
 
 	/**
-		@brief	ƒOƒ‹[ƒv•`‰æŠJn
+		@brief	ã‚°ãƒ«ãƒ¼ãƒ—æç”»é–‹å§‹
 	*/
 	virtual void BeginRenderingGroup(InstanceGroup* group, Manager* manager);
 
 	/**
-		@brief	•`‰æ
+		@brief	æç”»
 	*/
 	virtual void Rendering(const Instance& instance, Manager* manager);
 
 	/**
-		@brief	•`‰æI—¹
+		@brief	æç”»çµ‚äº†
 	*/
 	virtual void EndRendering(Manager* manager);
 
 	/**
-		@brief	ƒCƒ“ƒXƒ^ƒ“ƒXƒOƒ‹[ƒv•`‰æ‰Šú‰»
+		@brief	ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚°ãƒ«ãƒ¼ãƒ—æç”»æ™‚åˆæœŸåŒ–
 	*/
 	virtual void InitializeRenderedInstanceGroup(InstanceGroup& instanceGroup, Manager* manager);
 
 	/**
-		@brief	•`‰æ•”•ª‰Šú‰»
+		@brief	æç”»éƒ¨åˆ†åˆæœŸåŒ–
 	*/
 	virtual void InitializeRenderedInstance( Instance& instance, Manager* manager );
 
 	/**
-		@brief	•`‰æ•”•ªXV
+		@brief	æç”»éƒ¨åˆ†æ›´æ–°
 	*/
 	virtual void UpdateRenderedInstance(Instance& instance, Manager* manager);
 
 	/**
-		@brief	•`‰æ•”•ªXV
+		@brief	æç”»éƒ¨åˆ†æ›´æ–°
 	*/
 	virtual float GetFadeAlpha( const Instance& instance );
 
 	/**
-		@brief	ƒTƒEƒ“ƒhÄ¶
+		@brief	ã‚µã‚¦ãƒ³ãƒ‰å†ç”Ÿ
 	*/
 	virtual void PlaySound_(Instance& instance, SoundTag tag, Manager* manager);
 
 	/**
-		@brief	ƒGƒtƒFƒNƒgƒm[ƒh¶¬
+		@brief	ã‚¨ãƒ•ã‚§ã‚¯ãƒˆãƒãƒ¼ãƒ‰ç”Ÿæˆ
 	*/
-	static EffectNode* Create( Effect* effect, EffectNode* parent, unsigned char*& pos );
+	static EffectNodeImplemented* Create(Effect* effect, EffectNode* parent, unsigned char*& pos);
 
 	/**
-		@brief	ƒm[ƒh‚Ìí—Şæ“¾
+		@brief	ãƒãƒ¼ãƒ‰ã®ç¨®é¡å–å¾—
 	*/
 	virtual eEffectNodeType GetType() const { return EFFECT_NODE_TYPE_NONE; }
 };

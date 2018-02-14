@@ -1,4 +1,4 @@
-
+ï»¿
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -64,7 +64,7 @@ public:
 		ES_SAFE_RELEASE(backGroundTexture);
 	}
 
-	// ƒRƒs[æ‚ÌƒeƒNƒXƒ`ƒƒ‚ð€”õ
+	// ã‚³ãƒ”ãƒ¼å…ˆã®ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’æº–å‚™
 	void PrepareTexture(uint32_t width, uint32_t height, DXGI_FORMAT format)
 	{
 		ReleaseTexture();
@@ -109,7 +109,7 @@ public:
 		}
 	}
 
-	virtual void OnDistorting()
+	virtual bool OnDistorting() override
 	{
 		HRESULT hr = S_OK;
 
@@ -135,6 +135,8 @@ public:
 		ES_SAFE_RELEASE(renderTargetView);
 
 		renderer->SetBackground(backGroundTextureSRV);
+
+		return true;
 	}
 };
 
@@ -284,7 +286,7 @@ End:
 //----------------------------------------------------------------------------------
 void TermGraphics()
 {
-	g_renderer->Destory();
+	g_renderer->Destroy();
 	ES_SAFE_RELEASE( g_renderTargetView );
 	ES_SAFE_RELEASE( g_backBuffer );
 	ES_SAFE_RELEASE( g_depthStencilView );

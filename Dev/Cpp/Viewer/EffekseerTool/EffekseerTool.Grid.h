@@ -1,4 +1,4 @@
-
+ï»¿
 #ifndef	__EFFEKSEERRENDERER_GRID_H__
 #define	__EFFEKSEERRENDERER_GRID_H__
 
@@ -8,7 +8,6 @@
 #include <EffekseerRenderer/EffekseerRendererDX9.Renderer.h>
 #include <EffekseerRenderer/EffekseerRendererDX9.RendererImplemented.h>
 #include <EffekseerRenderer/EffekseerRendererDX9.DeviceObject.h>
-#include <d3dx9.h>
 
 //-----------------------------------------------------------------------------------
 //
@@ -30,19 +29,18 @@ private:
 	};
 
 	EffekseerRendererDX9::RendererImplemented*			m_renderer;
-	ID3DXEffect*					m_shader;
-	IDirect3DVertexDeclaration9*	m_vertexDeclaration;
+	EffekseerRendererDX9::Shader*						m_shader;
 	int32_t							m_lineCount;
 	float							m_gridLength;
 
-	Grid( EffekseerRendererDX9::RendererImplemented* renderer, ID3DXEffect* shader );
+	Grid( EffekseerRendererDX9::RendererImplemented* renderer, EffekseerRendererDX9::Shader* shader );
 public:
 
 	virtual ~Grid();
 
 	static Grid* Create( EffekseerRendererDX9::RendererImplemented* renderer );
 
-public:	// ƒfƒoƒCƒX•œ‹Œ—p
+public:	// ãƒ‡ãƒã‚¤ã‚¹å¾©æ—§ç”¨
 	virtual void OnLostDevice();
 	virtual void OnResetDevice();
 

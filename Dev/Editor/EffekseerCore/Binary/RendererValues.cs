@@ -403,7 +403,14 @@ namespace Effekseer.Binary
 
 				if (param.Model.RelativePath != string.Empty)
 				{
-					data.Add(model_and_index[param.Model.RelativePath].GetBytes());
+					var relative_path = param.Model.RelativePath;
+
+                    if (!string.IsNullOrEmpty(relative_path))
+                    {
+                        relative_path = System.IO.Path.GetDirectoryName(relative_path) + "/" + System.IO.Path.GetFileNameWithoutExtension(relative_path) + ".efkmodel";
+                    }
+
+					data.Add(model_and_index[relative_path].GetBytes());
 				}
 				else
 				{
@@ -418,6 +425,8 @@ namespace Effekseer.Binary
 				{
 					data.Add((-1).GetBytes());
 				}
+
+				data.Add(param.Billboard);
 
 				if (param.Lighting.Value)
 				{

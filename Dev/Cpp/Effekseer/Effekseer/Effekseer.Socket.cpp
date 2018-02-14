@@ -1,3 +1,5 @@
+ï»¿
+#if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
 
 //----------------------------------------------------------------------------------
 // Include
@@ -22,7 +24,7 @@ namespace Effekseer {
 void Socket::Initialize()
 {
 #ifdef _WIN32
-	/* Winsock‰Šú‰» */
+	/* WinsockåˆæœŸåŒ– */
 	WSADATA m_WsaData;
 	::WSAStartup( MAKEWORD(2,0), &m_WsaData );
 #endif
@@ -34,7 +36,7 @@ void Socket::Initialize()
 void Socket::Finalize()
 {
 #ifdef _WIN32
-	/* WinsockQÆƒJƒEƒ“ƒ^Œ¸­+”jŠü */
+	/* Winsockå‚ç…§ã‚«ã‚¦ãƒ³ã‚¿æ¸›å°‘+ç ´æ£„ */
 	WSACleanup();
 #endif
 }
@@ -90,4 +92,6 @@ bool Socket::Listen( EfkSocket s, int32_t backlog )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
+#endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
 

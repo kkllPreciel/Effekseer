@@ -15,11 +15,6 @@ namespace Effekseer.GUI
 		{
 			InitializeComponent();
 
-			if (Core.Language == Language.English)
-			{
-				Text = "Viewer";
-			}
-
 			Command.CommandManager.Changed += OnChanged;
 
 			Core.EffectBehavior.Location.X.OnChanged += OnChanged;
@@ -54,6 +49,12 @@ namespace Effekseer.GUI
 
 			Core.EffectBehavior.Distance.OnChanged += OnChanged;
 
+			Core.EffectBehavior.TimeSpan.OnChanged += OnChanged;
+			Core.EffectBehavior.ColorAll.R.OnChanged += OnChanged;
+			Core.EffectBehavior.ColorAll.G.OnChanged += OnChanged;
+			Core.EffectBehavior.ColorAll.B.OnChanged += OnChanged;
+			Core.EffectBehavior.ColorAll.A.OnChanged += OnChanged;
+
 			Core.Option.Magnification.OnChanged += OnChanged;
 			Core.Option.IsGridShown.OnChanged += OnChanged;
 			Core.Option.GridLength.OnChanged += OnChanged;
@@ -66,6 +67,8 @@ namespace Effekseer.GUI
 			Core.Option.GridColor.B.OnChanged += OnChanged;
 			Core.Option.GridColor.A.OnChanged += OnChanged;
 			Core.Option.FPS.OnChanged += OnChanged;
+
+			Core.Option.DistortionType.OnChanged += OnChanged;
 			Core.Option.Coordinate.OnChanged += OnChanged;
 
 			Core.Option.BackgroundImage.OnChanged += OnChanged;
@@ -436,6 +439,14 @@ namespace Effekseer.GUI
 				Core.EffectBehavior.CountY,
 				Core.EffectBehavior.CountZ);
 
+			viewer.SetAllColor(
+				(byte)Core.EffectBehavior.ColorAll.R,
+				(byte)Core.EffectBehavior.ColorAll.G,
+				(byte)Core.EffectBehavior.ColorAll.B,
+				(byte)Core.EffectBehavior.ColorAll.A);
+
+			viewer.SetEffectTimeSpan(Core.EffectBehavior.TimeSpan);
+			
 			viewer.SetEffectDistance(Core.EffectBehavior.Distance);
 
 			viewer.SetBackgroundColor(
@@ -448,6 +459,8 @@ namespace Effekseer.GUI
 
 			viewer.SetStep((int)Core.Option.FPS.Value);
 			viewer.SetIsRightHand(Core.Option.Coordinate.Value == Data.OptionValues.CoordinateType.Right);
+
+			viewer.SetDistortionType((int)Core.Option.DistortionType.Value);
 
 			if (Core.Culling.Type.Value == Data.EffectCullingValues.ParamaterType.Sphere)
 			{

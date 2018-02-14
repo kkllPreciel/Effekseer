@@ -1,4 +1,4 @@
-
+ï»¿
 #ifndef	__EFFEKSEER_BASE_PRE_H__
 #define	__EFFEKSEER_BASE_PRE_H__
 
@@ -7,6 +7,8 @@
 //----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <string.h>
+#include <atomic>
+#include <stdint.h>
 
 //----------------------------------------------------------------------------------
 //
@@ -20,11 +22,17 @@
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#include <stdint.h>
-
 
 #ifdef _WIN32
 #include <windows.h>
+#elif defined(_PSVITA)
+#include "Effekseer.PSVita.h"
+#elif defined(_PS4)
+#include "Effekseer.PS4.h"
+#elif defined(_SWITCH)
+#include "Effekseer.Switch.h"
+#elif defined(_XBOXONE)
+#include "Effekseer.XBoxOne.h"
 #else
 #include <unistd.h>
 #include <pthread.h>
@@ -52,6 +60,7 @@ struct RectF;
 
 class Manager;
 class Effect;
+class EffectNode;
 
 class ParticleRenderer;
 class SpriteRenderer;
@@ -74,25 +83,25 @@ class Model;
 typedef	int	Handle;
 
 /**
-	@brief	ƒƒ‚ƒŠŠm•ÛŠÖ”
+	@brief	ãƒ¡ãƒ¢ãƒªç¢ºä¿é–¢æ•°
 */
 typedef void* ( EFK_STDCALL *MallocFunc ) ( unsigned int size );
 
 /**
-	@brief	ƒƒ‚ƒŠ”jŠüŠÖ”
+	@brief	ãƒ¡ãƒ¢ãƒªç ´æ£„é–¢æ•°
 */
 typedef	void ( EFK_STDCALL *FreeFunc ) ( void* p, unsigned int size );
 
 /**
-	@brief	ƒ‰ƒ“ƒ_ƒ€ŠÖ”
+	@brief	ãƒ©ãƒ³ãƒ€ãƒ é–¢æ•°
 */
 typedef	int ( EFK_STDCALL *RandFunc ) (void);
 
 /**
-	@brief	ƒGƒtƒFƒNƒg‚ÌƒCƒ“ƒXƒ^ƒ“ƒX”jŠü‚ÌƒR[ƒ‹ƒoƒbƒNƒCƒxƒ“ƒg
-	@param	manager	[in]	Š‘®‚µ‚Ä‚¢‚éƒ}ƒl[ƒWƒƒ[
-	@param	handle	[in]	ƒGƒtƒFƒNƒg‚ÌƒCƒ“ƒXƒ^ƒ“ƒX‚Ìƒnƒ“ƒhƒ‹
-	@param	isRemovingManager	[in]	ƒ}ƒl[ƒWƒƒ[‚ğ”jŠü‚µ‚½‚Æ‚«‚ÉƒGƒtƒFƒNƒg‚ÌƒCƒ“ƒXƒ^ƒ“ƒX‚ğ”jŠü‚µ‚Ä‚¢‚é‚©
+	@brief	ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã®ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ç ´æ£„æ™‚ã®ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯ã‚¤ãƒ™ãƒ³ãƒˆ
+	@param	manager	[in]	æ‰€å±ã—ã¦ã„ã‚‹ãƒãƒãƒ¼ã‚¸ãƒ£ãƒ¼
+	@param	handle	[in]	ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã®ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã®ãƒãƒ³ãƒ‰ãƒ«
+	@param	isRemovingManager	[in]	ãƒãƒãƒ¼ã‚¸ãƒ£ãƒ¼ã‚’ç ´æ£„ã—ãŸã¨ãã«ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã®ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’ç ´æ£„ã—ã¦ã„ã‚‹ã‹
 */
 typedef	void ( EFK_STDCALL *EffectInstanceRemovingCallback ) ( Manager* manager, Handle handle, bool isRemovingManager );
 
@@ -105,28 +114,28 @@ typedef	void ( EFK_STDCALL *EffectInstanceRemovingCallback ) ( Manager* manager,
 //
 //----------------------------------------------------------------------------------
 /**
-	@brief	ƒAƒ‹ƒtƒ@ƒuƒŒƒ“ƒh
+	@brief	ã‚¢ãƒ«ãƒ•ã‚¡ãƒ–ãƒ¬ãƒ³ãƒ‰
 */
 enum class AlphaBlendType : int32_t
 {
 	/// <summary>
-	/// •s“§–¾
+	/// ä¸é€æ˜
 	/// </summary>
 	Opacity = 0,
 	/// <summary>
-	/// “§–¾
+	/// é€æ˜
 	/// </summary>
 	Blend = 1,
 	/// <summary>
-	/// ‰ÁZ
+	/// åŠ ç®—
 	/// </summary>
 	Add = 2,
 	/// <summary>
-	/// Œ¸Z
+	/// æ¸›ç®—
 	/// </summary>
 	Sub = 3,
 	/// <summary>
-	/// æZ
+	/// ä¹—ç®—
 	/// </summary>
 	Mul = 4,
 };
@@ -180,11 +189,19 @@ enum class TextureType : int32_t
 	Distortion,
 };
 
+enum class TextureFormatType : int32_t
+{
+	ABGR8,
+	BC1,
+	BC2,
+	BC3,
+};
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 /**
-	@brief	Å‘å’læ“¾
+	@brief	æœ€å¤§å€¤å–å¾—
 */
 template <typename T,typename U>
 T Max( T t, U u )
@@ -197,7 +214,7 @@ T Max( T t, U u )
 }
 
 /**
-	@brief	Å¬’læ“¾
+	@brief	æœ€å°å€¤å–å¾—
 */
 template <typename T,typename U>
 T Min( T t, U u )
@@ -210,7 +227,7 @@ T Min( T t, U u )
 }
 
 /**
-	@brief	”ÍˆÍ“à’læ“¾
+	@brief	ç¯„å›²å†…å€¤å–å¾—
 */
 template <typename T,typename U,typename V>
 T Clamp( T t, U max_, V min_ )
@@ -256,11 +273,11 @@ inline void SinCos(float x, float& s, float& c)
 //
 //----------------------------------------------------------------------------------
 /**
-	@brief	•¶šƒR[ƒh‚ğ•ÏŠ·‚·‚éB(UTF16 -> UTF8)
-	@param	dst	[out]	o—Í”z—ñ‚Ìæ“ªƒ|ƒCƒ“ƒ^
-	@param	dst_size	[in]	o—Í”z—ñ‚Ì’·‚³
-	@param	src			[in]	“ü—Í”z—ñ‚Ìæ“ªƒ|ƒCƒ“ƒ^
-	@return	•¶š”
+	@brief	æ–‡å­—ã‚³ãƒ¼ãƒ‰ã‚’å¤‰æ›ã™ã‚‹ã€‚(UTF16 -> UTF8)
+	@param	dst	[out]	å‡ºåŠ›é…åˆ—ã®å…ˆé ­ãƒã‚¤ãƒ³ã‚¿
+	@param	dst_size	[in]	å‡ºåŠ›é…åˆ—ã®é•·ã•
+	@param	src			[in]	å…¥åŠ›é…åˆ—ã®å…ˆé ­ãƒã‚¤ãƒ³ã‚¿
+	@return	æ–‡å­—æ•°
 */
 inline int32_t ConvertUtf16ToUtf8( int8_t* dst, int32_t dst_size, const int16_t* src )
 {
@@ -300,11 +317,11 @@ inline int32_t ConvertUtf16ToUtf8( int8_t* dst, int32_t dst_size, const int16_t*
 }
 
 /**
-	@brief	•¶šƒR[ƒh‚ğ•ÏŠ·‚·‚éB(UTF8 -> UTF16)
-	@param	dst	[out]	o—Í”z—ñ‚Ìæ“ªƒ|ƒCƒ“ƒ^
-	@param	dst_size	[in]	o—Í”z—ñ‚Ì’·‚³
-	@param	src			[in]	“ü—Í”z—ñ‚Ìæ“ªƒ|ƒCƒ“ƒ^
-	@return	•¶š”
+	@brief	æ–‡å­—ã‚³ãƒ¼ãƒ‰ã‚’å¤‰æ›ã™ã‚‹ã€‚(UTF8 -> UTF16)
+	@param	dst	[out]	å‡ºåŠ›é…åˆ—ã®å…ˆé ­ãƒã‚¤ãƒ³ã‚¿
+	@param	dst_size	[in]	å‡ºåŠ›é…åˆ—ã®é•·ã•
+	@param	src			[in]	å…¥åŠ›é…åˆ—ã®å…ˆé ­ãƒã‚¤ãƒ³ã‚¿
+	@return	æ–‡å­—æ•°
 */
 inline int32_t ConvertUtf8ToUtf16( int16_t* dst, int32_t dst_size, const int8_t* src )
 {
@@ -324,22 +341,22 @@ inline int32_t ConvertUtf8ToUtf16( int16_t* dst, int32_t dst_size, const int8_t*
 		{
 			break;
 		}
-		// UTF8‚©‚çUTF16‚É•ÏŠ·
+		// UTF8ã‹ã‚‰UTF16ã«å¤‰æ›
 		code = (uint8_t)c0 >> 4;
 		if (code <= 7)
 		{
-			// 8bit•¶š
+			// 8bitæ–‡å­—
 			wc = c0;
 		} 
 		else if (code >= 12 && code <= 13)
 		{
-			// 16bit•¶š
+			// 16bitæ–‡å­—
 			c1 = *src++;
 			wc = ((c0 & 0x1F) << 6) | (c1 & 0x3F);
 		} 
 		else if (code == 14)
 		{
-			// 24bit•¶š
+			// 24bitæ–‡å­—
 			c1 = *src++;
 			c2 = *src++;
 			wc = ((c0 & 0x0F) << 12) | ((c1 & 0x3F) << 6) | (c2 & 0x3F);
@@ -354,6 +371,107 @@ inline int32_t ConvertUtf8ToUtf16( int16_t* dst, int32_t dst_size, const int8_t*
 	return i;
 }
 
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+/**
+@brief	å‚ç…§ã‚«ã‚¦ãƒ³ã‚¿ã®ã‚¤ãƒ³ã‚¿ãƒ¼ãƒ•ã‚§ãƒ¼ã‚¹
+*/
+class IReference
+{
+public:
+	/**
+	@brief	å‚ç…§ã‚«ã‚¦ãƒ³ã‚¿ã‚’åŠ ç®—ã™ã‚‹ã€‚
+	@return	åŠ ç®—å¾Œã®å‚ç…§ã‚«ã‚¦ãƒ³ã‚¿
+	*/
+	virtual int AddRef() = 0;
+
+	/**
+	@brief	å‚ç…§ã‚«ã‚¦ãƒ³ã‚¿ã‚’å–å¾—ã™ã‚‹ã€‚
+	@return	å‚ç…§ã‚«ã‚¦ãƒ³ã‚¿
+	*/
+	virtual int GetRef() = 0;
+
+	/**
+	@brief	å‚ç…§ã‚«ã‚¦ãƒ³ã‚¿ã‚’æ¸›ç®—ã™ã‚‹ã€‚0ã«ãªã£ãŸæ™‚ã€ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’å‰Šé™¤ã™ã‚‹ã€‚
+	@return	æ¸›ç®—å¾Œã®å‚ç…§ã‚«ã‚¦ãƒ³ã‚¿
+	*/
+	virtual int Release() = 0;
+};
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+/**
+@brief	å‚ç…§ã‚«ã‚¦ãƒ³ã‚¿ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
+*/
+class ReferenceObject
+	: public IReference
+{
+private:
+	mutable std::atomic<int32_t> m_reference;
+
+public:
+	ReferenceObject()
+		: m_reference(1)
+	{
+	}
+
+	virtual ~ReferenceObject()
+	{}
+
+	virtual int AddRef()
+	{
+		std::atomic_fetch_add_explicit(&m_reference, 1, std::memory_order_consume);
+
+		return m_reference;
+	}
+
+	virtual int GetRef()
+	{
+		return m_reference;
+	}
+
+	virtual int Release()
+	{
+		bool destroy = std::atomic_fetch_sub_explicit(&m_reference, 1, std::memory_order_consume) == 1;
+		if (destroy)
+		{
+			delete this;
+			return 0;
+		}
+
+		return m_reference;
+	}
+};
+
+/**
+	@brief	This object generates random values.
+*/
+class IRandObject
+{
+public:
+	virtual float GetRand() = 0;
+
+	virtual float GetRand(float min_, float max_) = 0;
+};
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+/**
+	@brief	\~english	Texture data
+			\~japanese	ãƒ†ã‚¯ã‚¹ãƒãƒ£ãƒ‡ãƒ¼ã‚¿
+*/
+struct TextureData
+{
+	int32_t Width;
+	int32_t Height;
+	TextureFormatType	TextureFormat;
+	void*	UserPtr;
+	int64_t	UserID;
+};
 
 //----------------------------------------------------------------------------------
 //
